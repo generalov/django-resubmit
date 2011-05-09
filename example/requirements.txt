@@ -1,0 +1,4 @@
+django>=1.2
+django-webtest
+webtest
+
