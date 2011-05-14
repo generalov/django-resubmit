@@ -88,8 +88,8 @@ class ClearTest(unittest.TestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
-        self.cache = CacheMock()
-        self.widget = FileCacheWidget(cache=self.cache)
+        self.backend = CacheMock()
+        self.widget = FileCacheWidget(backend=self.backend)
 
     def test_should_not_display_clear_checkbox_then_is_required(self):
         widget = self.widget
@@ -109,7 +109,7 @@ class ClearTest(unittest.TestCase):
         output = widget.render('file', upload)
         self.assertTrue('<input type="checkbox" name="file-clear"' in output, output)
 
-    def test_should_not_to_cache_on_cotradiction(self):
+    def test_should_not_to_hold_a_file_on_cotradiction(self):
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
@@ -117,22 +117,22 @@ class ClearTest(unittest.TestCase):
             'file': self.factory.file('test.txt', 'test content')})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, FILE_INPUT_CONTRADICTION)
-        self.assertEquals(self.cache._data, {})
+        self.assertEquals(self.backend._data, {})
 
-    def test_should_clear_cache_when_clear_is_checked_and_no_any_file(self):
+    def test_should_clear_when_clear_is_checked_and_no_any_file(self):
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
             'file': self.factory.file('test.txt', 'test content')})
         widget.value_from_datadict(request.POST, request.FILES, 'file')
-        self.assertEquals(len(self.cache._data.keys()), 1, "File should be in the cache")
+        self.assertEquals(len(self.backend._data.keys()), 1, "File should be hodled")
 
         request = self.factory.post('/', {
             'file-cachekey': widget.hidden_key,
             'file-clear': 'on',})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, False, "Upload should be False")
-        self.assertEquals(self.cache._data, {}, "Cache should be empty")
+        self.assertEquals(self.backend._data, {}, "Cache should be empty")
 
     def test_should_handle_large_files(self):
         """
@@ -145,9 +145,8 @@ class ClearTest(unittest.TestCase):
         the cache just metadata.
         """
         widget = self.widget
-        widget.is_required = True
         request = self.factory.post('/', {
             'file': self.factory.file('test.txt', 'x' * 10000000)})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
-        self.assertEquals(len(self.cache._data.keys()), 1, "Should cache large file")
+        self.assertEquals(len(self.backend._data.keys()), 1, "Should to remember large file")

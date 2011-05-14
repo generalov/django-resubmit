@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+        'NAME': sitepath('db.sqlite'),
     }
 }
 TIME_ZONE = 'America/Chicago'

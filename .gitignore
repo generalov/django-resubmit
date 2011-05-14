@@ -1,3 +1,4 @@
 python
 *.egg-info
 *.pyc
+example/db.sqlite
