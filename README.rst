@@ -5,21 +5,31 @@ Django.
 Status and License
 ==================
 
-It is written by Andrey Podoplelov and Evgeny V. Generalov. It is licensed under
-an Simplified BSD License.
+It is licensed under an Simplified BSD License.
+
+
+Configuration
+=============
+Add 'django_resubmit' to the INSTALLED_APPS section in your django settings file.
+
+Also you can setup cache backend for you project in settings.py, for example::
+
+    DJANGO_RESUBMIT_BACKEND = "file:///tmp/?timeout=600"
+
+For more information about cache see Django documentation. 
 
 
 Usage
 =====
 
-Supply FileFiled with custom FileCacheWidget widget::
+Supply FileFiled with custom FileWidget widget::
 
    from django import forms
-   from django_resubmit.forms.widgets import FileCacheWidget
+   from django_resubmit.forms.widgets import FileWidget
    
    class SampleForm(forms.Form):
        name = forms.CharField(max_length=25)
-       file = forms.FileField(widget=FileCacheWidget)
+       file = forms.FileField(widget=FileWidget(thumb_size=[50,50]))
 
 
 What It Does
@@ -33,6 +43,12 @@ random key and injects this key as hidden field into the form then
 ValidationError is occured. When user resubmits the form It restores the file
 from the cache and put it into the ``request.FILES``.
 
+It automatically generates and shows thumbnails for uploaded image files. You 
+can easily extend it to show video, flash, etc.
+
+It makes Javascript image preview for just selected(not uploaded) files. Works 
+in Chrome, Firefox and IE.
+ 
 
 How To Run Tests
 ================
@@ -49,9 +65,6 @@ Use virtualenv::
 Bugs and TODO
 =============
 
-* Separate FileCacheWidget from django.contrib.admin
-* Handle large files (larger than FILE_UPLOAD_MAX_MEMORY_SIZE)
-* Add support for ImageField
 * Write documentation
 * Commit into the Django
 

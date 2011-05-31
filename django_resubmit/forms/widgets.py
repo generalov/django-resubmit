@@ -1,42 +1,48 @@
-# -*- coding: utf-8 -*-
+import random
 import string
 import time
-import random
 
+from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
-from django.forms.fields import FileField
 from django.forms.widgets import HiddenInput, CheckboxInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
-from django.utils.encoding import StrAndUnicode, force_unicode
+from django.utils.encoding import force_unicode
 
-from django_resubmit.storage import TemporaryFileStorage
+from django_resubmit.storage import get_default_storage
+from django_resubmit.thumbnails import ThumbFabrica
 
 FILE_INPUT_CLEAR = False
 
 
-class FileCacheWidget(AdminFileWidget):
+class FileWidget(AdminFileWidget):
+
+    class Media:
+        js = (settings.STATIC_URL + 'django_resubmit/jquery.input_image_preview.js',)
 
     def __init__(self, *args, **kwargs):
-        backend = kwargs.pop("backend", None)
-        self.storage = TemporaryFileStorage(backend=backend)
+        """
+        thumb_size - preview image size, default [50,50]. 
+        """
+        self.thumb_size = kwargs.pop("thumb_size", [50, 50])
+        self.set_storage(get_default_storage())
         self.hidden_keyname = u""
         self.hidden_key = u""
         self.isSaved = False
-        super(FileCacheWidget, self).__init__(*args, **kwargs)
+        super(FileWidget, self).__init__(*args, **kwargs)
 
     def value_from_datadict(self, data, files, name):
         self.hidden_keyname = "%s-cachekey" % name
         self.hidden_key = data.get(self.hidden_keyname, "")
 
-        upload = super(FileCacheWidget, self).value_from_datadict(data, files, name)
+        upload = super(FileWidget, self).value_from_datadict(data, files, name)
 
         # user checks 'clear' or checks 'clear' and uploads a file
         if upload is FILE_INPUT_CLEAR or upload is FILE_INPUT_CONTRADICTION:
             if self.hidden_key:
-                self.storage.clear_file(self.hidden_key)
+                self._storage.clear_file(self.hidden_key)
                 self.hidden_key = u""
             return upload
 
@@ -45,10 +51,13 @@ class FileCacheWidget(AdminFileWidget):
                 # generate random key
                 self.hidden_key = string.replace(unicode(random.random() * time.time()), ".", "")
             upload = files[name]
+
             upload.file.seek(0)
-            self.storage.put_file(self.hidden_key, upload)
+
+            self._storage.put_file(self.hidden_key, upload)
+
         elif self.hidden_key:
-            restored = self.storage.get_file(self.hidden_key, name)
+            restored = self._storage.get_file(self.hidden_key, name)
             if restored:
                 upload = restored
                 files[name] = upload
@@ -66,12 +75,7 @@ class FileCacheWidget(AdminFileWidget):
         }
         template = u'%(input)s'
 
-        if value is None:
-            value = ''
         final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
-        #if value != '' and self.hidden_key:
-        #    # Only add the 'value' attribute if a value is non-empty.
-        #    final_attrs['value'] = force_unicode(self._format_value(value))
         substitutions['input'] = mark_safe(u'<input%s />' % flatatt(final_attrs))
 
         if value and hasattr(value, "url"):
@@ -92,8 +96,36 @@ class FileCacheWidget(AdminFileWidget):
         html = template % substitutions
 
         if self.hidden_key:
-            hi = HiddenInput()
-            html += hi.render(self.hidden_keyname, self.hidden_key, {})
+            key_hidden_input = HiddenInput()
+            html += key_hidden_input.render(self.hidden_keyname, self.hidden_key, {})
+
+        if value:
+            thumb = ThumbFabrica(value, self).thumb()
+            if thumb:
+                try:
+                    html += thumb.render()
+                except:
+                    html += u"Can't create preview"
+
+        html += """
+            <script>
+            (function($){
+                $(function(){
+                     $("#id_%s").inputImagePreview({
+                           place: function(frame) { $(this).before(frame); },
+                           imageUrl: function(){ return $(this).prevAll("a:first").attr("href");},
+                           maxWidth: %s,
+                     });
+                 })
+            })(jQuery || django.jQuery);
+             </script>
+        """ % (name, self.thumb_size[0])
+
         return mark_safe(html)
+
+    def set_storage(self, value):
+        self._storage = value
+
+
 
 

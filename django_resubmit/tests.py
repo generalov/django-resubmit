@@ -1,15 +1,22 @@
+# coding: utf-8
+import re
+import os
 import unittest
 from django_webtest import WebTest
 
 from django import forms
 from django import template
 from django.http import HttpResponse
-from django.conf.urls.defaults import patterns, include, url
+from django.conf.urls.defaults import patterns, url, include
+from django.test import TestCase
+
 from django_resubmit.test import CacheMock
+from django_resubmit.test import MediaStub
 from django_resubmit.test import RequestFactory
 
-from django_resubmit.forms.widgets import FileCacheWidget
+from django_resubmit.forms.widgets import FileWidget
 from django_resubmit.forms.widgets import FILE_INPUT_CONTRADICTION
+from django_resubmit.storage import TemporaryFileStorage
 
 
 class HttpResponseOk(HttpResponse):
@@ -35,7 +42,7 @@ UPLOAD_TEMPLATE = u"""
 
 class SampleForm(forms.Form):
     name = forms.CharField(max_length=25)
-    file = forms.FileField(widget=FileCacheWidget())
+    file = forms.FileField(widget=FileWidget())
 
 
 def view_upload_file(request):
@@ -57,39 +64,103 @@ def view_upload_file(request):
 
 urlpatterns = patterns('',
     url(r'^$', view_upload_file),
+    url(r'^thumbnail/$', include('django_resubmit.urls')),
 )
+
+
+class MediaStubTest(TestCase):
+    urls = __name__
+
+    def setUp(self):
+        global urlpatterns
+        self.media = MediaStub(media_url="/media/")
+        urlpatterns = patterns('', *self.media.url_patterns())
+
+    def tearDown(self):
+        self.media.dispose()
+
+    def test_should_get_uploaded_file(self):
+        from django.conf import settings
+
+        uploaded_path = os.path.join(settings.MEDIA_ROOT, "upload.txt")
+        f = open(uploaded_path, 'wb')
+        f.write("some data")
+        f.close()
+        response = self.client.get(settings.MEDIA_URL + "upload.txt")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.content, "some data")
+
+    def test_should_get_file_using_media_url(self):
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
+
+        default_storage.save("upload.txt", ContentFile("some data"))
+        response = self.client.get("/media/upload.txt")
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.content, "some data")
 
 
 class FormTest(WebTest):
     urls = 'django_resubmit.tests'
 
+    def setUp(self):
+        self.app.relative_to = os.path.dirname(__file__)
+        self.media = MediaStub(media_url='/media/')
+
+    def tearDown(self):
+        self.media.dispose()
+
+
     def test_should_preserve_file_on_form_errors(self):
         response = self.app.get('/')
         form = response.forms[0]
         form['file'] = ['test.txt', u'test content']
-        self.assertEquals(sorted(form.fields.keys()),
-                [u'csrfmiddlewaretoken', u'file', u'name', u'submit'])
 
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseOk.status_code)
         self.assertEquals(len(response.context['form']['file'].errors), 0)
         self.assertEquals(len(response.context['form']['name'].errors), 1)
         form = response.forms[0]
-        self.assertEquals(sorted(form.fields.keys()),
-                [u'csrfmiddlewaretoken', u'file', u'file-cachekey', u'name', u'submit'])
 
         form['name'] = u'value for required field'
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseCreated.status_code, response.body)
         self.assertEquals(response.unicode_body, u'test content')
 
+    def test_should_show_cached_file_without_link(self):
+        response = self.app.get('/')
+        form = response.forms[0]
+        form['file'] = ['test.txt', u'test content']
+        response = form.submit()
+        self.assertEquals(response.status_int, HttpResponseOk.status_code)
+
+        self.assertTrue(u'Currently: test.txt' in response.unicode_body,
+                u"Should show cached file without link")
+
+    def test_if_thumb_is_rendered_on_submit_errors(self):
+        """ Check thumb generation for image files on submit errors"""
+
+        response = self.app.get('/')
+        form = response.forms[0]
+        form['file'] = ['fixtures/test-image.png']
+        response = form.submit()
+        self.assertEquals(response.status_int, HttpResponseOk.status_code)
+
+        preview_match = re.search(ur'<img alt="preview" src="([^"]+)" />',
+                response.unicode_body)
+        self.assertTrue(preview_match,
+                u"page contains an <img> tag with preview")
+        preview_url = preview_match.group(1)
+        preview_response = self.app.get(preview_url)
+        self.assertEquals(200, preview_response.status_int,
+                u"preview available for download")
+
 
 class ClearTest(unittest.TestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
-        self.backend = CacheMock()
-        self.widget = FileCacheWidget(backend=self.backend)
+        self.widget = FileWidget()
 
     def test_should_not_display_clear_checkbox_then_is_required(self):
         widget = self.widget
@@ -110,6 +181,9 @@ class ClearTest(unittest.TestCase):
         self.assertTrue('<input type="checkbox" name="file-clear"' in output, output)
 
     def test_should_not_to_hold_a_file_on_cotradiction(self):
+        backend = CacheMock()
+        self.widget.set_storage(TemporaryFileStorage(backend=backend))
+
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
@@ -117,22 +191,25 @@ class ClearTest(unittest.TestCase):
             'file': self.factory.file('test.txt', 'test content')})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, FILE_INPUT_CONTRADICTION)
-        self.assertEquals(self.backend._data, {})
+        self.assertEquals(backend._data, {})
 
     def test_should_clear_when_clear_is_checked_and_no_any_file(self):
+        backend = CacheMock()
+        self.widget.set_storage(TemporaryFileStorage(backend=backend))
+
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
             'file': self.factory.file('test.txt', 'test content')})
         widget.value_from_datadict(request.POST, request.FILES, 'file')
-        self.assertEquals(len(self.backend._data.keys()), 1, "File should be hodled")
+        self.assertEquals(len(backend._data.keys()), 1, "File should be hodled")
 
         request = self.factory.post('/', {
             'file-cachekey': widget.hidden_key,
-            'file-clear': 'on',})
+            'file-clear': 'on', })
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, False, "Upload should be False")
-        self.assertEquals(self.backend._data, {}, "Cache should be empty")
+        self.assertEquals(backend._data, {}, "Cache should be empty")
 
     def test_should_handle_large_files(self):
         """
@@ -144,9 +221,14 @@ class ClearTest(unittest.TestCase):
         I suppose we should store such files on the disk too, and place in
         the cache just metadata.
         """
+        backend = CacheMock()
+        self.widget.set_storage(TemporaryFileStorage(backend=backend))
+
         widget = self.widget
         request = self.factory.post('/', {
             'file': self.factory.file('test.txt', 'x' * 10000000)})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
-        self.assertEquals(len(self.backend._data.keys()), 1, "Should to remember large file")
+        self.assertEquals(len(backend._data.keys()), 1, "Should to remember large file")
+
+

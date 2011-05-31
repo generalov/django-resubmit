@@ -64,6 +64,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 
     'django_resubmit',
+    'testapp',
 )
 LOGGING = {
     'version': 1,

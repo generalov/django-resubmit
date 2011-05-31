@@ -1,5 +1,7 @@
 # coding: utf-8
 from cStringIO import StringIO
+from django.conf import settings
+from django.core.cache import get_cache
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
@@ -9,17 +11,17 @@ FIELD_CONTENT_TYPE = "content_type"
 FIELD_CHARSET = "charset"
 FIELD_CONTENT = "content"
 
+def get_default_storage():
+    backend = getattr(settings, 'DJANGO_RESUBMIT_BACKEND', 'file:///tmp')
+    return TemporaryFileStorage(backend=get_cache(backend))
+
 
 class TemporaryFileStorage(object):
-    def __init__(self, backend=None, prefix=None, max_in_memory_size=None):
+    def __init__(self, backend=None, prefix=None):
         if backend is None:
             from django.core.cache import cache as backend
         if prefix is None:
             prefix = 'cachefile-'
-        if max_in_memory_size is None:
-            from django.conf import settings
-            max_in_memory_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE
-        self.max_in_memory_size = max_in_memory_size
         self.backend = backend
         self.prefix = prefix
 
