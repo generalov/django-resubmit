@@ -5,8 +5,8 @@ import time
 from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
 from django.forms.widgets import Input
-from django.forms.widgets import HiddenInput
 from django.forms.widgets import CheckboxInput
+from django.forms.widgets import HiddenInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
@@ -14,6 +14,7 @@ from django.utils.encoding import force_unicode
 
 from django_resubmit.storage import get_default_storage
 from django_resubmit.thumbnails import ThumbFabrica
+
 
 FILE_INPUT_CLEAR = False
 
@@ -52,11 +53,8 @@ class FileWidget(AdminFileWidget):
                 # generate random key
                 self.hidden_key = string.replace(unicode(random.random() * time.time()), ".", "")
             upload = files[name]
-
             upload.file.seek(0)
-
             self._storage.put_file(self.hidden_key, upload)
-
         elif self.hidden_key:
             restored = self._storage.get_file(self.hidden_key, name)
             if restored:
@@ -98,32 +96,34 @@ class FileWidget(AdminFileWidget):
             html += HiddenInput().render(self.hidden_keyname, self.hidden_key, {})
 
         if value:
-            thumb = ThumbFabrica(value, self).thumb()
-            if thumb:
-                try:
-                    html += thumb.render()
-                except:
-                    html += u"Can't create preview"
-
-        html += """
-            <script>
-            (function($){
-                $(function(){
-                     $("#id_%s").inputImagePreview({
-                           place: function(frame) { $(this).before(frame); },
-                           imageUrl: function(){ return $(this).prevAll("a:first").attr("href");},
-                           maxWidth: %s,
-                     });
-                 })
-            })(jQuery || django.jQuery);
-             </script>
-        """ % (name, self.thumb_size[0])
+            try:
+                html += self._render_preview(name, value)
+            except:
+                html += u"Can't create preview"
 
         return mark_safe(html)
 
     def set_storage(self, value):
         self._storage = value
 
-
-
-
+    def _render_preview(self, name, value):
+        html = ""
+        thumb = ThumbFabrica(value, self).thumb()
+        if thumb:
+            html += thumb.render()
+        html += """
+            <script>
+            (function($){
+                $(function(){
+                     $("%(element)s").inputImagePreview({
+                           place: function(frame) { $(this).before(frame); },
+                           imageUrl: function(){ return $(this).prevAll("a:first").attr("href");},
+                           maxWidth: %(max_width)s,
+                     });
+                 });
+            })(jQuery || django.jQuery);
+            </script>
+            """ % dict(
+                element="#id_%s" % name,
+                max_width=self.thumb_size[0])
+        return html

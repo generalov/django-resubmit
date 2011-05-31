@@ -1,18 +1,18 @@
 import mimetypes
 import Image
-
-
-from django.core.files.uploadedfile import InMemoryUploadedFile, SimpleUploadedFile
-from django.core.urlresolvers import reverse
-from django.db.models.fields.files import FieldFile
-from django.utils.encoding import iri_to_uri
-from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
-from sorl.thumbnail.main import DjangoThumbnail
-
+import urllib
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.urlresolvers import reverse
+from django.db.models.fields.files import FieldFile
+from django.utils.encoding import iri_to_uri
+from sorl.thumbnail.main import DjangoThumbnail
+from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
 
 
 class ThumbFabrica(object):
@@ -63,10 +63,15 @@ class ImageThumb(object):
 
     def _src(self):
         """ Get SRC attribute for HTML tag IMG"""
-        if type(self.value) == InMemoryUploadedFile:
-            thumbnail_url = reverse('django_resubmit.views.thumbnail')
-            return thumbnail_url + "?key=%s&name=%s&width=%s&height=%s" % (self.widget.hidden_key, self.value.name, self.widget.thumb_size[0], self.widget.thumb_size[1])
-        elif type(self.value) == FieldFile:
+        if isinstance(self.value, InMemoryUploadedFile):
+            return "%s?%s" % (
+                reverse('django_resubmit.views.thumbnail'),
+                urllib.urlencode(dict(
+                    key=self.widget.hidden_key,
+                    name=self.value.name,
+                    width=self.widget.thumb_size[0],
+                    height=self.widget.thumb_size[1])))
+        elif isinstance(self.value, FieldFile):
             return self._filesystem(self.value)
 
     def render(self):
