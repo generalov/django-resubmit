@@ -1,5 +1,5 @@
-This could help users to resubmit file in FileField in after ValidationError in
-Django.
+This could help users to resubmit form after validation error was occured
+without loosing selected files.
 
 
 Status and License
@@ -10,11 +10,15 @@ It is licensed under an Simplified BSD License.
 
 Configuration
 =============
-Add 'django_resubmit' to the INSTALLED_APPS section in your django settings file.
 
-Also you can setup cache backend for you project in settings.py, for example::
+Edit your ``settings.py`` and append ``django_resubmit`` to the
+``INSTALLED_APPS``.  Also you can specify a cache backend, for example::
 
-    DJANGO_RESUBMIT_BACKEND = "file:///tmp/?timeout=600"
+    INSTALLED_APPS = (
+        ...,
+        "django_resubmit",
+    )
+    DJANGO_RESUBMIT_BACKEND = "file:///tmp/resubmit?timeout=600"
 
 For more information about cache see Django documentation. 
 
@@ -32,21 +36,18 @@ Supply FileFiled with custom FileWidget widget::
        file = forms.FileField(widget=FileWidget(thumb_size=[50,50]))
 
 
-What It Does
+How It Works
 ============
 
-It helps users to resubmit form after ValidationError was occured without
-loosing specified files.
-
 It stores uploaded file into the temporary storage (cache) on the server with
-random key and injects this key as hidden field into the form then
-ValidationError is occured. When user resubmits the form It restores the file
-from the cache and put it into the ``request.FILES``.
+some key and injects this key as hidden field into the form then the
+``ValidationError`` is occured. When user resubmits the form It restores the
+file from the cache and puts it into the ``request.FILES``.
 
 It automatically generates and shows thumbnails for uploaded image files. You 
 can easily extend it to show video, flash, etc.
 
-It makes Javascript image preview for just selected(not uploaded) files. Works 
+It makes Javascript image preview for just selected (not uploaded) files. Works
 in Chrome, Firefox and IE.
  
 
@@ -65,6 +66,10 @@ Use virtualenv::
 Bugs and TODO
 =============
 
-* Write documentation
-* Commit into the Django
+* Extract preview-specific logic from the FileWidget.
+* The ability to customize and expand the set of preview methods.
+* Dynamically create a more accurate preview using ajax. This should fix the
+  preview problem in the Opera browser too.
+* Write documentation.
+* Commit into the Django.
 
