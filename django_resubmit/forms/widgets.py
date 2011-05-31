@@ -4,9 +4,10 @@ import time
 
 from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
-from django.forms.widgets import HiddenInput, CheckboxInput
+from django.forms.widgets import Input
+from django.forms.widgets import HiddenInput
+from django.forms.widgets import CheckboxInput
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
-from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
 from django.utils.encoding import force_unicode
@@ -68,15 +69,13 @@ class FileWidget(AdminFileWidget):
 
     def render(self, name, value, attrs=None):
         substitutions = {
-            'initial_text': self.initial_text,
+            'input': Input().render(name, None, self.build_attrs(attrs, type=self.input_type)),
             'input_text': self.input_text,
+            'initial_text': self.initial_text,
             'clear_template': '',
             'clear_checkbox_label': self.clear_checkbox_label,
         }
         template = u'%(input)s'
-
-        final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
-        substitutions['input'] = mark_safe(u'<input%s />' % flatatt(final_attrs))
 
         if value and hasattr(value, "url"):
             template = self.template_with_initial
@@ -96,8 +95,7 @@ class FileWidget(AdminFileWidget):
         html = template % substitutions
 
         if self.hidden_key:
-            key_hidden_input = HiddenInput()
-            html += key_hidden_input.render(self.hidden_keyname, self.hidden_key, {})
+            html += HiddenInput().render(self.hidden_keyname, self.hidden_key, {})
 
         if value:
             thumb = ThumbFabrica(value, self).thumb()
