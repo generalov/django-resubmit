@@ -60,7 +60,7 @@ Use virtualenv::
     . ./python/bin/activate
     pip install -r example/requirements.txt
     pip install -e .
-    python example/manage.py test django_resubmit
+    python example/manage.py test django_resubmit testapp
 
 
 Bugs and TODO

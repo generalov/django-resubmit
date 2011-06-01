@@ -2,24 +2,27 @@
 import re
 import os
 import unittest
-from django_webtest import WebTest
 
 from django import forms
 from django import template
 from django.http import HttpResponse
 from django.conf.urls.defaults import patterns, url, include
 from django.test import TestCase
+from django_webtest import WebTest
 
 from django_resubmit.test import CacheMock
 from django_resubmit.test import MediaStub
 from django_resubmit.test import RequestFactory
-
 from django_resubmit.forms.widgets import FileWidget
 from django_resubmit.forms.widgets import FILE_INPUT_CONTRADICTION
 from django_resubmit.storage import TemporaryFileStorage
 
 
 class HttpResponseOk(HttpResponse):
+    status_code = 200
+
+
+class HttpResponseValidationError(HttpResponse):
     status_code = 200
 
 
@@ -54,18 +57,14 @@ def view_upload_file(request):
             return HttpResponseCreated(
                     content=f.read(),
                     content_type="text/plain; charset=utf-8")
+        Response = HttpResponseValidationError
     else:
         form = SampleForm()
+        Response = HttpResponseOk
     t = template.Template(UPLOAD_TEMPLATE)
     data = {'form': form}
     output = t.render(template.RequestContext(request, data))
-    return HttpResponseOk(output)
-
-
-urlpatterns = patterns('',
-    url(r'^$', view_upload_file),
-    url(r'^thumbnail/$', include('django_resubmit.urls')),
-)
+    return Response(output)
 
 
 class MediaStubTest(TestCase):
@@ -87,7 +86,7 @@ class MediaStubTest(TestCase):
         f.write("some data")
         f.close()
         response = self.client.get(settings.MEDIA_URL + "upload.txt")
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, HttpResponseOk.status_code)
         self.assertEquals(response.content, "some data")
 
     def test_should_get_file_using_media_url(self):
@@ -96,20 +95,24 @@ class MediaStubTest(TestCase):
 
         default_storage.save("upload.txt", ContentFile("some data"))
         response = self.client.get("/media/upload.txt")
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, HttpResponseOk.status_code)
         self.assertEquals(response.content, "some data")
 
 
 class FormTest(WebTest):
-    urls = 'django_resubmit.tests'
+    urls = __name__
 
     def setUp(self):
+        global urlpatterns
+        urlpatterns = patterns('',
+            url(r'^$', view_upload_file),
+            url(r'^thumbnail/$', include('django_resubmit.urls')),
+        )
         self.app.relative_to = os.path.dirname(__file__)
         self.media = MediaStub(media_url='/media/')
 
     def tearDown(self):
         self.media.dispose()
-
 
     def test_should_preserve_file_on_form_errors(self):
         response = self.app.get('/')
@@ -117,7 +120,7 @@ class FormTest(WebTest):
         form['file'] = ['test.txt', u'test content']
 
         response = form.submit()
-        self.assertEquals(response.status_int, HttpResponseOk.status_code)
+        self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
         self.assertEquals(len(response.context['form']['file'].errors), 0)
         self.assertEquals(len(response.context['form']['name'].errors), 1)
         form = response.forms[0]
@@ -132,7 +135,7 @@ class FormTest(WebTest):
         form = response.forms[0]
         form['file'] = ['test.txt', u'test content']
         response = form.submit()
-        self.assertEquals(response.status_int, HttpResponseOk.status_code)
+        self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
 
         self.assertTrue(u'Currently: test.txt' in response.unicode_body,
                 u"Should show cached file without link")
@@ -144,7 +147,7 @@ class FormTest(WebTest):
         form = response.forms[0]
         form['file'] = ['fixtures/test-image.png']
         response = form.submit()
-        self.assertEquals(response.status_int, HttpResponseOk.status_code)
+        self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
 
         preview_match = re.search(ur'<img alt="preview" src="([^"]+)" />',
                 response.unicode_body)
@@ -152,7 +155,7 @@ class FormTest(WebTest):
                 u"page contains an <img> tag with preview")
         preview_url = preview_match.group(1)
         preview_response = self.app.get(preview_url)
-        self.assertEquals(200, preview_response.status_int,
+        self.assertEquals(preview_response.status_int, HttpResponseOk.status_code,
                 u"preview available for download")
 
 
