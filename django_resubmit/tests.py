@@ -234,4 +234,3 @@ class ClearTest(unittest.TestCase):
         output = widget.render('file', upload)
         self.assertEquals(len(backend._data.keys()), 1, "Should to remember large file")
 
-

@@ -12,13 +12,20 @@ Configuration
 =============
 
 Edit your ``settings.py`` and append ``django_resubmit`` to the
-``INSTALLED_APPS``.  Also you can specify a cache backend, for example::
+``INSTALLED_APPS``.  Also you must specify a ``resubmit`` cache backend, for
+example::
 
     INSTALLED_APPS = (
         ...,
         "django_resubmit",
     )
-    DJANGO_RESUBMIT_BACKEND = "file:///tmp/resubmit?timeout=600"
+    CACHES = {
+        ...,
+        "resubmit": {
+            "BACKEND": "django.core.caches.backends.filebased.FileBasedCache",
+            "LOCATION": "/tmp/resubmit-data",
+        }
+    }
 
 For more information about cache see Django documentation. 
 

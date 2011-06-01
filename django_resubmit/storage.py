@@ -1,8 +1,9 @@
 # coding: utf-8
 from cStringIO import StringIO
-from django.conf import settings
 from django.core.cache import get_cache
 from django.core.files.uploadedfile import InMemoryUploadedFile
+
+from django_resubmit.conf import settings
 
 
 FIELD_FILE_NAME = "name"
@@ -12,14 +13,12 @@ FIELD_CHARSET = "charset"
 FIELD_CONTENT = "content"
 
 def get_default_storage():
-    backend = getattr(settings, 'DJANGO_RESUBMIT_BACKEND', 'file:///tmp')
-    return TemporaryFileStorage(backend=get_cache(backend))
+    backend = get_cache(settings.BACKEND)
+    return TemporaryFileStorage(backend)
 
 
 class TemporaryFileStorage(object):
-    def __init__(self, backend=None, prefix=None):
-        if backend is None:
-            from django.core.cache import cache as backend
+    def __init__(self, backend, prefix=None):
         if prefix is None:
             prefix = 'cachefile-'
         self.backend = backend

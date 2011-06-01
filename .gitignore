@@ -1,5 +1,5 @@
 python
 *.egg-info
 *.pyc
-example/db.sqlite
+example/data/
 example/media
