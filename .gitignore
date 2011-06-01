@@ -1,5 +1,6 @@
 python
 *.egg-info
 *.pyc
+build/
 example/data/
 example/media
