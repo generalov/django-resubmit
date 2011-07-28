@@ -25,7 +25,6 @@ class FileWidget(AdminFileWidget):
 
     class Media:
         js = (settings.STATIC_URL + 'django_resubmit/jquery.input_image_preview.js',)
-		pass
 
     def __init__(self, *args, **kwargs):
         """
