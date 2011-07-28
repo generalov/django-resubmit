@@ -22,7 +22,7 @@ example::
     CACHES = {
         ...,
         "resubmit": {
-            "BACKEND": "django.core.caches.backends.filebased.FileBasedCache",
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
             "LOCATION": "/tmp/resubmit-data",
         }
     }

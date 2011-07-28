@@ -15,7 +15,7 @@ from sorl.thumbnail.main import DjangoThumbnail
 from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
 
 
-class ThumbFabrica(object):
+class ThumbFactory(object):
     def __init__(self, value, widget):
         self.value = value
         self.widget = widget
@@ -55,7 +55,7 @@ class ImageThumb(object):
 
     def _filesystem(self, value):
         """ Make real filesystem thumbnail and return url"""
-        image_path = iri_to_uri(value)
+        image_path = unicode(value)
         t = DjangoThumbnail(relative_source=image_path,
                             requested_size=self.widget.thumb_size,
                             processors=PROCESSORS)

@@ -4,6 +4,7 @@ import time
 
 from django.conf import settings
 from django.contrib.admin.widgets import AdminFileWidget
+from django.core.urlresolvers import NoReverseMatch
 from django.forms.widgets import Input
 from django.forms.widgets import CheckboxInput
 from django.forms.widgets import HiddenInput
@@ -12,8 +13,9 @@ from django.utils.safestring import mark_safe
 from django.utils.html import escape
 from django.utils.encoding import force_unicode
 
+
 from django_resubmit.storage import get_default_storage
-from django_resubmit.thumbnails import ThumbFabrica
+from django_resubmit.thumbnails import ThumbFactory
 
 
 FILE_INPUT_CLEAR = False
@@ -23,6 +25,7 @@ class FileWidget(AdminFileWidget):
 
     class Media:
         js = (settings.STATIC_URL + 'django_resubmit/jquery.input_image_preview.js',)
+		pass
 
     def __init__(self, *args, **kwargs):
         """
@@ -98,7 +101,9 @@ class FileWidget(AdminFileWidget):
         if value:
             try:
                 html += self._render_preview(name, value)
-            except:
+            except NoReverseMatch:
+                raise
+            except Exception:
                 html += u"Can't create preview"
 
         return mark_safe(html)
@@ -108,7 +113,7 @@ class FileWidget(AdminFileWidget):
 
     def _render_preview(self, name, value):
         html = ""
-        thumb = ThumbFabrica(value, self).thumb()
+        thumb = ThumbFactory(value, self).thumb()
         if thumb:
             html += thumb.render()
         html += """
