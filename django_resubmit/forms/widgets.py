@@ -57,11 +57,13 @@ class FileWidget(AdminFileWidget):
             upload = files[name]
             upload.file.seek(0)
             self._storage.put_file(self.hidden_key, upload)
+            upload.file.seek(0)
         elif self.hidden_key:
             restored = self._storage.get_file(self.hidden_key, name)
             if restored:
                 upload = restored
                 files[name] = upload
+                upload.file.seek(0)
             else:
                 self.hidden_key = u""
 
