@@ -43,6 +43,9 @@ Supply FileFiled with custom FileWidget widget::
        file = forms.FileField(widget=FileWidget(thumb_size=[50,50]))
 
 
+Add this url to urls.py::
+    url(r'^thumbnail/$', include('django_resubmit.urls'))
+
 How It Works
 ============
 
