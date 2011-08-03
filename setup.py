@@ -6,7 +6,7 @@ from distutils.core import setup
 
 setup(
     name="django-resubmit",
-    version="0.1",
+    version="0.2",
     license = 'BSD',
     description="Resubmitable file widgets for Django",
     packages=['django_resubmit', 'django_resubmit.forms'],
