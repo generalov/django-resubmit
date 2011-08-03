@@ -22,7 +22,7 @@ class ThumbFactory(object):
 
     def thumb(self):
         guess_type = self.guess_type()
-        if guess_type in ['image/png', 'image/jpeg', 'image/gif']:
+        if guess_type in ['image/png', 'image/jpeg', 'image/gif', 'image/x-icon']:
             return ImageThumb(self.value, self.widget)
         elif guess_type in ['video/mpeg', 'video/quicktime']:
             pass # return VideoThumb(self.value, self.size) 
