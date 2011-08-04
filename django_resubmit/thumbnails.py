@@ -79,6 +79,6 @@ class ImageThumb(object):
         html = '';
         src = self._src()
         if src:
-            html += """<img alt="preview" src="%s" /> """ % src
+            html += """<img alt="preview" src="%s" class="resubmit" style="display:block" /> """ % src
         return html
 

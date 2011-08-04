@@ -70,6 +70,9 @@ class FileWidget(AdminFileWidget):
         return upload
 
     def render(self, name, value, attrs=None):
+        default_attrs = {'class':'resubmit'}
+        attrs = attrs or {}
+        attrs.update(default_attrs)
         substitutions = {
             'input': Input().render(name, None, self.build_attrs(attrs, type=self.input_type)),
             'input_text': self.input_text,
@@ -94,42 +97,27 @@ class FileWidget(AdminFileWidget):
             substitutions['clear'] = CheckboxInput().render(checkbox_name, False, attrs={'id': checkbox_id})
             substitutions['clear_template'] = self.template_with_clear % substitutions
 
+        if value:
+            substitutions['input'] += self._render_preview(value)
+    
         html = template % substitutions
 
         if self.hidden_key:
             html += HiddenInput().render(self.hidden_keyname, self.hidden_key, {})
-
-        if value:
-            try:
-                html += self._render_preview(name, value)
-            except NoReverseMatch:
-                raise
-            except Exception:
-                html += u"Can't create preview"
 
         return mark_safe(html)
 
     def set_storage(self, value):
         self._storage = value
 
-    def _render_preview(self, name, value):
-        html = ""
-        thumb = ThumbFactory(value, self).thumb()
-        if thumb:
-            html += thumb.render()
-        html += """
-            <script>
-            (function($){
-                $(function(){
-                     $("%(element)s").inputImagePreview({
-                           place: function(frame) { $(this).before(frame); },
-                           imageUrl: function(){ return $(this).prevAll("a:first").attr("href");},
-                           maxWidth: %(max_width)s,
-                     });
-                 });
-            })(jQuery || django.jQuery);
-            </script>
-            """ % dict(
-                element="#id_%s" % name,
-                max_width=self.thumb_size[0])
-        return html
+    def _render_preview(self, value):
+        output = u''
+        try:
+            thumb = ThumbFactory(value, self).thumb()
+            if thumb:
+                output = thumb.render()
+        except NoReverseMatch:
+            raise
+        except Exception:
+            output += u"Can't create preview"
+        return output
