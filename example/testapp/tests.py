@@ -4,7 +4,7 @@ import re
 from django_webtest import WebTest
 from django.conf.urls.defaults import patterns, include, url
 from django.contrib.auth.models import User
-from django_resubmit.test import MediaStub
+from django_resubmit.tests import MediaStub
 
 
 class AdminEditTopicTest(WebTest):
@@ -36,12 +36,7 @@ class AdminEditTopicTest(WebTest):
     def test_should_see_icon_preview(self):
         response = self.app.get('/admin/testapp/topic/%d/' % self.topic.pk,
                 user=self.superuser)
-
-        preview_match = re.search(ur'<img alt="preview" src="([^"]+)" />',
-                response.unicode_body)
-        self.assertTrue(preview_match,
-                u"page contains an <img> tag with preview")
-        preview_url = preview_match.group(1)
+        preview_url = response.lxml.xpath("//img[@alt='preview']/@src")[0]
         preview_response = self.app.get(preview_url)
         self.assertEquals(200, preview_response.status_int,
                 u"preview available for download")

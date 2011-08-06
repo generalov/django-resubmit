@@ -1,7 +1,7 @@
 # coding: utf-8
 from django.contrib import admin
 from django.db import models
-from django_resubmit.forms.widgets import FileWidget
+from django_resubmit.widgets import FileWidget
 
 from models import Topic
 

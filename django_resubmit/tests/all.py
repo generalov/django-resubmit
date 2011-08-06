@@ -1,4 +1,6 @@
 # coding: utf-8
+from __future__ import absolute_import
+
 import re
 import os
 import unittest
@@ -10,12 +12,13 @@ from django.conf.urls.defaults import patterns, url, include
 from django.test import TestCase
 from django_webtest import WebTest
 
-from django_resubmit.test import CacheMock
-from django_resubmit.test import MediaStub
-from django_resubmit.test import RequestFactory
-from django_resubmit.forms.widgets import FileWidget
-from django_resubmit.forms.widgets import FILE_INPUT_CONTRADICTION
-from django_resubmit.storage import TemporaryFileStorage
+
+from . import CacheMock
+from . import MediaStub
+from . import RequestFactory
+from ..widgets import FileWidget
+from ..widgets import FILE_INPUT_CONTRADICTION
+from ..storage import TemporaryFileStorage
 
 
 class HttpResponseOk(HttpResponse):
