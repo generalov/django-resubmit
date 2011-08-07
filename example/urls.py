@@ -7,8 +7,8 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('example.views',
-    url(r'^thumbnail/$', include('django_resubmit.urls')),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^django_resubmit/', include('django_resubmit.urls', namespace="django_resubmit")),
 )
 
 if settings.DEBUG:

@@ -16,6 +16,8 @@ class Config(object):
                                        "backend in your settings.")
 
         self.BACKEND = backend
+        self.RESUBMIT_THUMBNAIL_SIZE = getattr(settings, "RESUBMIT_THUMBNAIL_SIZE", (60, 60))
+        self.STATIC_URL = getattr(settings, "STATIC_URL")
 
 
 settings = Config(default_settings)

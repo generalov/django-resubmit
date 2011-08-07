@@ -1,6 +1,11 @@
+# coding: utf-8
+from __future__ import absolute_import
+
 from django.conf.urls.defaults import patterns, url
+from .views import Preview, Resubmit
 
 
 urlpatterns = patterns('django_resubmit.views',
-    url(r'^$', 'thumbnail', name='thumbnail'),
+    url(r'^$', Resubmit.as_view(), name='create'),
+    url(r'^(?P<key>\w+)/$', Preview.as_view(), name='preview'),
 )

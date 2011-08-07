@@ -1,4 +1,7 @@
 # coding: utf-8
+import string
+import random
+import time
 from cStringIO import StringIO
 from django.core.cache import get_cache
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -24,7 +27,10 @@ class TemporaryFileStorage(object):
         self.backend = backend
         self.prefix = prefix
 
-    def put_file(self, key, upload):
+    def put_file(self, upload, key=None):
+        upload.file.seek(0)
+        if not key:
+            key = string.replace(unicode(random.random() * time.time()), ".", "")
         state = {
             FIELD_FILE_NAME: upload.name,
             FIELD_FILE_SIZE: upload.size,
@@ -32,6 +38,8 @@ class TemporaryFileStorage(object):
             FIELD_CHARSET: upload.charset,
             FIELD_CONTENT: upload.file.read()}
         self.backend.set(self._getid(key), state)
+        upload.file.seek(0)
+        return key
 
     def get_file(self, key, field_name):
         upload = None
@@ -47,6 +55,7 @@ class TemporaryFileStorage(object):
                     content_type=state[FIELD_CONTENT_TYPE],
                     size=size,
                     charset=state[FIELD_CHARSET])
+            upload.file.seek(0)
         return upload
 
     def clear_file(self, key):

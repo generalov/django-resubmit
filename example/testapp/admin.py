@@ -9,7 +9,7 @@ from models import Topic
 class TopicAdmin(admin.ModelAdmin):
     list_display = ('title',)
     formfield_overrides = {
-	    models.FileField: {'widget': FileWidget(thumb_size=[50,50])},
+	    models.FileField: {'widget': FileWidget()},
     }
 
 
