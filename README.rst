@@ -40,7 +40,7 @@ Supply FileFiled with custom FileWidget widget::
    
    class SampleForm(forms.Form):
        name = forms.CharField(max_length=25)
-       file = forms.FileField(widget=FileWidget(thumb_size=[50,50]))
+       file = forms.FileField(widget=FileWidget)
 
 
 Add this url to urls.py::
