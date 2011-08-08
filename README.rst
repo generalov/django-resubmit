@@ -44,7 +44,9 @@ Supply FileFiled with custom FileWidget widget::
 
 
 Add this url to urls.py::
-    url(r'^thumbnail/$', include('django_resubmit.urls'))
+
+    url(r'^django_resubmit/', include('django_resubmit.urls', namespace="django_resubmit")),
+
 
 How It Works
 ============

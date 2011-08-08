@@ -35,7 +35,7 @@
             var image = this.preview_image.get(0);
 
             // HTML5 FileAPI: Firefox 3.6+, Chrome 6+
-            if(typeof(FileReader) != 'undefined')
+            if(typeof(FileReader) != undefined && inputfile.files.item != undefined)
             {
                 var reader = new FileReader();
                 reader.onload = function(e){
@@ -88,7 +88,11 @@
                         console.log(data.error)
                     } else {
                         self.key_input.val(data.key);
-                        self.file_link.removeAttr('href').text(data.upload.name);
+
+                        self.file_link.removeAttr('href');
+                        if (data.upload && data.upload.name){
+                            self.file_link.text(data.upload.name);
+                        }
 
                         // In order to reduce the form submittion time,
                         // I want to prevert re-uploading a file on the actual form submit.
