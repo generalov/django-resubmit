@@ -10,6 +10,8 @@ from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
 from django.utils.encoding import force_unicode
+from sorl.thumbnail.main import DjangoThumbnail
+from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
 
 from .conf import settings
 from .storage import get_default_storage
@@ -89,18 +91,33 @@ class FileWidget(AdminFileWidget):
             substitutions['clear_template'] = self.template_with_clear % substitutions
 
         width, height = self.thumb_size
+        thumbnail_url = self._thumbnail(value)
         substitutions['input'] += (HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}) +
                 u'<span class="resubmit-preview" style="width: %(max_width)dpx; height: %(max_height)dpx" >'
                 u'<img alt="preview" style="max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
                 u'</span>' % dict(
                     max_width = width,
                     max_height = height,
-                    src = 'src="%s"' % (reverse('django_resubmit:preview', args=[self.hidden_key]) if self.hidden_key else value.url if value else  u''))
+                    src = 'src="%s"' % thumbnail_url if thumbnail_url else ''
                 )
+        )
         return mark_safe(template % substitutions)
 
     def _hidden_keyname(self, name):
         return "%s-cachekey" % name
+    
+    def _thumbnail(self, value):
+        """ Make thumbnail and return url"""
+        
+        if self.hidden_key:
+            return reverse('django_resubmit:preview', args=[self.hidden_key])
+        elif hasattr(value, 'url'):
+            image_path = unicode(value)
+            t = DjangoThumbnail(relative_source=image_path,
+                                requested_size=self.thumb_size,
+                                processors=PROCESSORS)
+            return t.absolute_url
+        return ''
 
     def set_storage(self, value):
         self._storage = value
