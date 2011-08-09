@@ -14,7 +14,7 @@
         },
 
         _create: function(){
-            var frame = $(this.element).closest('.file-upload');
+            var frame = $(this.element).closest('.resubmit-widget');
             this.file_input = $(this.element);
             this.file_link = $('a', frame);
             this.key_input = $('input[type=hidden]', frame);
@@ -110,7 +110,7 @@
                         /* FIXME: unshure
                            If file will expired, user recieve a error message, and will have to select the file again.
                         */
-                        //self._clearFileInput();
+                        self._clearFileInput();
 
                         if (data.preview) {
                             self.updatePreview(data.preview.url);

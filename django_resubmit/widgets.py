@@ -83,6 +83,8 @@ class FileWidget(AdminFileWidget):
             template = self.template_with_initial
             substitutions['initial'] = escape(force_unicode(value.name))
 
+        
+
         if not self.is_required and value and (hasattr(value, "url") or self.hidden_key):
             checkbox_name = self.clear_checkbox_name(name)
             checkbox_id = self.clear_checkbox_id(checkbox_name)
@@ -103,6 +105,8 @@ class FileWidget(AdminFileWidget):
                     display = 'display: none;' if not thumbnail_url else '',
                 )
         )
+        
+        template = u'<div class="resubmit-widget">%s</div>' % template
         return mark_safe(template % substitutions)
 
     def _hidden_keyname(self, name):
