@@ -95,11 +95,12 @@ class FileWidget(AdminFileWidget):
         thumbnail_url = self._thumbnail(value)
         substitutions['input'] += (HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}) +
                 u'<span class="resubmit-preview" style="width: %(max_width)dpx; height: %(max_height)dpx" >'
-                u'<img alt="preview" style="display: none; max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
+                u'<img alt="preview" style="%(display)s; max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
                 u'</span>' % dict(
                     max_width = width,
                     max_height = height,
-                    src = 'src="%s"' % thumbnail_url if thumbnail_url else ''
+                    src = 'src="%s"' % thumbnail_url if thumbnail_url else '',
+                    display = 'display: none;' if not thumbnail_url else '',
                 )
         )
         return mark_safe(template % substitutions)

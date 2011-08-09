@@ -1,4 +1,5 @@
 .resubmit-preview {
+	display: block;
     text-align: center;
 }
 .resubmit-preview__image {

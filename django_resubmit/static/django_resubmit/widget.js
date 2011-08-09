@@ -9,7 +9,7 @@
     $.extend(ResubmitPreview.prototype, {
         options: {
             maxDataLength: 1024 * 1024,
-            trobberUrl: 'http://www.computerbase.de/design/throbber.gif',
+            trobberUrl: '/media/django_resubmit/throbber.gif',
             action: '/django_resubmit/'
         },
 
@@ -20,18 +20,14 @@
             this.key_input = $('input[type=hidden]', frame);
             this.preview = $('.resubmit-preview', frame);
             this.preview_image = $('.resubmit-preview__image', frame);
-            this.changed();
         },
 
         changed: function(){
-            //this.preview_image.attr('src', this.options.trobberUrl);
-            
             this.localPreview();
             this.remotePreview();
         },
 
         updatePreview: function(src){
-        console.log('up');
             this.preview_image.attr('src', src);
             if (src){
                 this.preview_image.show().css('display', 'block');
@@ -39,19 +35,20 @@
         },
 
         localPreview: function() {
-            var self = this;
             var inputfile = this.file_input.get(0);
             var image = this.preview_image.get(0);
 
             // HTML5 FileAPI: Firefox 3.6+, Chrome 6+
-            if(typeof(FileReader) != undefined && inputfile.files.item != undefined)
-            {
-                var reader = new FileReader();
-                reader.onload = function(e){
-                    var src = e.target.result;
-                    self.updatePreview(src);
-                }
-                reader.readAsDataURL(inputfile.files.item(0));
+            if(typeof(FileReader) != undefined) {
+                if (inputfile.files[0]) {
+	                var reader = new FileReader(),
+	                    self = this;
+	                reader.onload = function(e){
+	                    var src = e.target.result;
+	                    self.updatePreview(src);
+	                }
+	                reader.readAsDataURL(inputfile.files[0]);
+	           }
             } else {
                 // legacy browsers
                 var base64ImgUriPattern = /^data:image\/(png|gif|ico|jpg|jpeg|bmp);base64/i;
@@ -61,14 +58,15 @@
                     if (file.getAsDataURL) {
                         var src = file.getAsDataURL();
                         if (src && src.length < this.options.maxDataLength && base64ImgUriPattern.test(src)) {
-                            self.updatePreview(src);
+                            this.updatePreview(src);
                         }
                     }
                 } else if (inputfile.value) {
                     /* maybe ie */
-                    var src = this.value;
-                    self.updatePreview(src);
+                    this.updatePreview(inputfile.value);
                     
+                } else {
+                    this.updatePreview(this.options.trobberUrl);
                 }
             }
         },
@@ -97,7 +95,7 @@
                 success: function(jsonText) {
                     var data = JSON.parse(jsonText);
                     if (data.error) {
-                        console.log(data.error)
+                        //TODO:
                     } else {
                         self.key_input.val(data.key);
 
@@ -112,11 +110,10 @@
                         /* FIXME: unshure
                            If file will expired, user recieve a error message, and will have to select the file again.
                         */
-                        self._clearFileInput();
+                        //self._clearFileInput();
 
                         if (data.preview) {
                             self.updatePreview(data.preview.url);
-                        } else {
                         }
                     }
                 }
@@ -147,11 +144,11 @@
 
         return this.each(function(){
             var obj = $(this).data('resubmit');
-            if (obj) {
-                obj.changed();
-            } else {
-                $(this).data('resubmit', new ResubmitPreview(this, options));
+            if (!obj) {
+                obj = new ResubmitPreview(this, options);
+                $(this).data('resubmit');
             }
+            obj.changed();
         });
 
     };
@@ -159,6 +156,6 @@
     $(function(){
          $("input[type=file].resubmit").live('change', function(){
              $(this).resubmitPreview();
-         }).resubmitPreview();
+         });
     });
 })(django.jQuery);
