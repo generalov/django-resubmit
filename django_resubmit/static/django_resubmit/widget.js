@@ -25,12 +25,21 @@
 
         changed: function(){
             //this.preview_image.attr('src', this.options.trobberUrl);
-            this.preview.show().css('display', 'block');
+            
             this.localPreview();
             this.remotePreview();
         },
 
+        updatePreview: function(src){
+        console.log('up');
+            this.preview_image.attr('src', src);
+            if (src){
+                this.preview_image.show().css('display', 'block');
+            }
+        },
+
         localPreview: function() {
+            var self = this;
             var inputfile = this.file_input.get(0);
             var image = this.preview_image.get(0);
 
@@ -39,7 +48,8 @@
             {
                 var reader = new FileReader();
                 reader.onload = function(e){
-                    image.src = e.target.result;
+                    var src = e.target.result;
+                    self.updatePreview(src);
                 }
                 reader.readAsDataURL(inputfile.files.item(0));
             } else {
@@ -51,12 +61,14 @@
                     if (file.getAsDataURL) {
                         var src = file.getAsDataURL();
                         if (src && src.length < this.options.maxDataLength && base64ImgUriPattern.test(src)) {
-                            image.src = src;
+                            self.updatePreview(src);
                         }
                     }
                 } else if (inputfile.value) {
                     /* maybe ie */
-                    image.src = this.value;
+                    var src = this.value;
+                    self.updatePreview(src);
+                    
                 }
             }
         },
@@ -103,7 +115,7 @@
                         self._clearFileInput();
 
                         if (data.preview) {
-                            self.preview_image.attr('src', data.preview.url);
+                            self.updatePreview(data.preview.url);
                         } else {
                         }
                     }

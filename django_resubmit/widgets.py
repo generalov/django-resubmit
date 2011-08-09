@@ -12,6 +12,7 @@ from django.utils.html import escape
 from django.utils.encoding import force_unicode
 from sorl.thumbnail.main import DjangoThumbnail
 from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
+from sorl.thumbnail.base import ThumbnailException
 
 from .conf import settings
 from .storage import get_default_storage
@@ -94,7 +95,7 @@ class FileWidget(AdminFileWidget):
         thumbnail_url = self._thumbnail(value)
         substitutions['input'] += (HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}) +
                 u'<span class="resubmit-preview" style="width: %(max_width)dpx; height: %(max_height)dpx" >'
-                u'<img alt="preview" style="max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
+                u'<img alt="preview" style="display: none; max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
                 u'</span>' % dict(
                     max_width = width,
                     max_height = height,
@@ -108,15 +109,17 @@ class FileWidget(AdminFileWidget):
     
     def _thumbnail(self, value):
         """ Make thumbnail and return url"""
-        
         if self.hidden_key:
             return reverse('django_resubmit:preview', args=[self.hidden_key])
         elif hasattr(value, 'url'):
-            image_path = unicode(value)
-            t = DjangoThumbnail(relative_source=image_path,
-                                requested_size=self.thumb_size,
-                                processors=PROCESSORS)
-            return t.absolute_url
+            try:
+                image_path = unicode(value)
+                t = DjangoThumbnail(relative_source=image_path,
+                                    requested_size=self.thumb_size,
+                                    processors=PROCESSORS)
+                return t.absolute_url
+            except ThumbnailException:
+                return ''
         return ''
 
     def set_storage(self, value):
