@@ -1,3 +1,13 @@
+.resubmit-widget {
+    margin-left: 77px;
+    padding-left: 30px;
+}
+
+.resubmit-widget p {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
 .resubmit-preview {
 	display: block;
     text-align: center;

@@ -10,12 +10,10 @@ from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.safestring import mark_safe
 from django.utils.html import escape
 from django.utils.encoding import force_unicode
-from sorl.thumbnail.main import DjangoThumbnail
-from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
-from sorl.thumbnail.base import ThumbnailException
 
 from .conf import settings
 from .storage import get_default_storage
+from .thumbnails import can_create_thumbnail, create_thumbnail, ThumbnailException
 
 
 FILE_INPUT_CLEAR = False
@@ -96,13 +94,13 @@ class FileWidget(AdminFileWidget):
         width, height = self.thumb_size
         thumbnail_url = self._thumbnail(value)
         substitutions['input'] += (HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}) +
-                u'<span class="resubmit-preview" style="width: %(max_width)dpx; height: %(max_height)dpx" >'
-                u'<img alt="preview" style="%(display)s; max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
+                u'<span class="resubmit-preview" style="width: %(max_width)dpx; height: %(max_height)dpx; %(display)s" >'
+                u'<img alt="preview" style="max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
                 u'</span>' % dict(
                     max_width = width,
                     max_height = height,
                     src = 'src="%s"' % thumbnail_url if thumbnail_url else '',
-                    display = 'display: none;' if not thumbnail_url else '',
+                    display = 'display: none; ' if not thumbnail_url else '',
                 )
         )
         
@@ -114,14 +112,12 @@ class FileWidget(AdminFileWidget):
     
     def _thumbnail(self, value):
         """ Make thumbnail and return url"""
-        if self.hidden_key:
+        if self.hidden_key and can_create_thumbnail(value):
             return reverse('django_resubmit:preview', args=[self.hidden_key])
         elif hasattr(value, 'url'):
             try:
                 image_path = unicode(value)
-                t = DjangoThumbnail(relative_source=image_path,
-                                    requested_size=self.thumb_size,
-                                    processors=PROCESSORS)
+                t = create_thumbnail(self.thumb_size, image_path)
                 return t.absolute_url
             except ThumbnailException:
                 return ''

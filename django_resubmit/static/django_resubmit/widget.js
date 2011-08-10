@@ -28,9 +28,12 @@
         },
 
         updatePreview: function(src){
-            this.preview_image.attr('src', src);
             if (src){
-                this.preview_image.show().css('display', 'block');
+                this.preview_image.attr('src', src);
+                this.preview.show();
+            } else {
+                this.preview.hide();
+                this.preview_image.removeAttr('src');
             }
         },
 
@@ -90,16 +93,22 @@
                        if (a[i].name != field.name) {
                            a.splice(i, 1); //remove
                        }    
-                    }    
+                    }
+                    self.file_link.removeAttr('href').html($('<img style="height: 16px; width: 16px"/>').attr('src', self.options.trobberUrl));
                 },   
                 success: function(jsonText) {
                     var data = JSON.parse(jsonText);
                     if (data.error) {
-                        //TODO:
+                        self.file_link.text(error);
                     } else {
                         self.key_input.val(data.key);
 
-                        self.file_link.removeAttr('href');
+                        if (data.preview) {
+                            self.updatePreview(data.preview.url);
+                        } else {
+                            self.updatePreview(false); // hide preiview
+                        }
+
                         if (data.upload && data.upload.name){
                             self.file_link.text(data.upload.name);
                         }
@@ -112,9 +121,6 @@
                         */
                         self._clearFileInput();
 
-                        if (data.preview) {
-                            self.updatePreview(data.preview.url);
-                        }
                     }
                 }
            });                           
