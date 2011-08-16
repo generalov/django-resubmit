@@ -9,7 +9,7 @@
     $.extend(ResubmitPreview.prototype, {
         options: {
             maxDataLength: 1024 * 1024,
-            trobberUrl: '/media/django_resubmit/throbber.gif',
+            trobberUrl: '/static/django_resubmit/throbber.gif',
             action: '/django_resubmit/'
         },
 
@@ -20,6 +20,7 @@
             this.key_input = $('input[type=hidden]', frame);
             this.preview = $('.resubmit-preview', frame);
             this.preview_image = $('.resubmit-preview__image', frame);
+            this.initial = $('.resubmit-initial', frame);
         },
 
         changed: function(){
@@ -37,6 +38,15 @@
             }
         },
 
+        updatePreviewFromDataUrl: function(src) {
+            var base64ImgUriPattern = /^data:image\/(png|gif|ico|jpg|jpeg|bmp);base64/i;
+            if (src && src.length < this.options.maxDataLength && base64ImgUriPattern.test(src)) {
+                this.updatePreview(src);
+            } else {
+                this.updatePreview('');
+            }
+        },
+
         localPreview: function() {
             var inputfile = this.file_input.get(0);
             var image = this.preview_image.get(0);
@@ -48,7 +58,7 @@
 	                    self = this;
 	                reader.onload = function(e){
 	                    var src = e.target.result;
-	                    self.updatePreview(src);
+                            self.updatePreviewFromDataUrl(src);
 	                }
 	                reader.readAsDataURL(inputfile.files[0]);
 	           }
@@ -60,9 +70,7 @@
                     // Check if we can access the serialized file via getAsDataURL(). firefox
                     if (file.getAsDataURL) {
                         var src = file.getAsDataURL();
-                        if (src && src.length < this.options.maxDataLength && base64ImgUriPattern.test(src)) {
-                            this.updatePreview(src);
-                        }
+                        this.updatePreviewFromDataUrl(src);
                     }
                 } else if (inputfile.value) {
                     /* maybe ie */
@@ -111,6 +119,7 @@
 
                         if (data.upload && data.upload.name){
                             self.file_link.text(data.upload.name);
+                            self.initial.show()
                         }
 
                         // In order to reduce the form submittion time,
@@ -160,7 +169,7 @@
     };
 
     $(function(){
-         $("input[type=file].resubmit").live('change', function(){
+         $("input[type=file].resubmit-input").live('change', function(){
              $(this).resubmitPreview();
          });
     });

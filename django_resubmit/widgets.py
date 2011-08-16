@@ -1,15 +1,13 @@
 # coding: utf-8
 from __future__ import absolute_import
 
-from django.contrib.admin.widgets import AdminFileWidget
+import functools
 from django.core.urlresolvers import reverse
-from django.forms.widgets import Input
-from django.forms.widgets import CheckboxInput
-from django.forms.widgets import HiddenInput
+from django.forms.widgets import CheckboxInput, ClearableFileInput, HiddenInput, Input
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.safestring import mark_safe
-from django.utils.html import escape
 from django.utils.encoding import force_unicode
+from  xml.etree import cElementTree as ET
 
 from .conf import settings
 from .storage import get_default_storage
@@ -19,7 +17,7 @@ from .thumbnails import can_create_thumbnail, create_thumbnail, ThumbnailExcepti
 FILE_INPUT_CLEAR = False
 
 
-class FileWidget(AdminFileWidget):
+class FileWidget(ClearableFileInput):
 
     class Media:
         css = {'all': (settings.STATIC_URL + 'django_resubmit/widget.css',)}
@@ -65,47 +63,70 @@ class FileWidget(AdminFileWidget):
         default_attrs = {'class':'resubmit'}
         attrs = attrs or {}
         attrs.update(default_attrs)
-        substitutions = {
-            'input': Input().render(name, None, self.build_attrs(attrs, type=self.input_type)),
-            'input_text': self.input_text,
-            'initial_text': self.initial_text,
-            'clear_template': '',
-            'clear_checkbox_label': self.clear_checkbox_label,
-        }
-        template = u'%(input)s'
-
-        if value and hasattr(value, "url"):
-            template = self.template_with_initial
-            substitutions['initial'] = (u'<a target="_blank" href="%s">%s</a>' % (escape(value.url), escape(force_unicode(value))))
-        elif self.hidden_key:
-            template = self.template_with_initial
-            substitutions['initial'] = escape(force_unicode(value.name))
-
-        
-
-        if not self.is_required and value and (hasattr(value, "url") or self.hidden_key):
-            checkbox_name = self.clear_checkbox_name(name)
-            checkbox_id = self.clear_checkbox_id(checkbox_name)
-            substitutions['clear_checkbox_name'] = checkbox_name
-            substitutions['clear_checkbox_id'] = checkbox_id
-            substitutions['clear'] = CheckboxInput().render(checkbox_name, False, attrs={'id': checkbox_id})
-            substitutions['clear_template'] = self.template_with_clear % substitutions
-
+        checkbox_name = self.clear_checkbox_name(name)
+        checkbox_id = self.clear_checkbox_id(checkbox_name)
         width, height = self.thumb_size
         thumbnail_url = self._thumbnail(value)
-        substitutions['input'] += (HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}) +
-                u'<span class="resubmit-preview" style="width: %(max_width)dpx; height: %(max_height)dpx; %(display)s" >'
-                u'<img alt="preview" style="max-width: %(max_width)dpx; max-height: %(max_height)dpx" %(src)s class="resubmit-preview__image" />'
-                u'</span>' % dict(
-                    max_width = width,
-                    max_height = height,
-                    src = 'src="%s"' % thumbnail_url if thumbnail_url else '',
-                    display = 'display: none; ' if not thumbnail_url else '',
-                )
-        )
         
-        template = u'<div class="resubmit-widget">%s</div>' % template
-        return mark_safe(template % substitutions)
+        data = {'name': name,
+                'value': value,
+                'width': width,
+                'height': height,
+                'input': Input().render(name, None, self.build_attrs(attrs, type=self.input_type)),
+                'input_text': self.input_text,
+                'input_has_initial': value and (hasattr(value, "url") or self.hidden_key),
+                'initial_text': self.initial_text,
+                'is_required': self.is_required,
+                'key_input': HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}),
+                'thumbnail_url': thumbnail_url,
+                'clear_checkbox': CheckboxInput().render(checkbox_name, False, attrs={'id': checkbox_id}),
+                'clear_checkbox_id': checkbox_id,
+                'clear_checkbox_name': checkbox_name,
+                'clear_checkbox_label': self.clear_checkbox_label,
+        }
+
+        return mark_safe(force_unicode(ET.tostring(self._html(data))))
+
+    def _html(self, data):
+        t = HtmlBuilder()
+        s = StyleBuilder()
+
+        return t.div({'class': 'resubmit-widget'},
+                    t.div({
+                        'class': 'resubmit-preview',
+                        'style': s({
+                            'width': s.px(data['width']),
+                            'height': s.px(data['height']),
+                            'display': 'none' if not data['thumbnail_url'] else None})},
+                        t.img({
+                            'class': 'resubmit-preview__image',
+                            'style': s({
+                                'max-width': s.px(data['width']),
+                                'max-height': s.px(data['height']),
+                                }),
+                            #'alt': 'preview',
+                            'src': data['thumbnail_url'] or None})),
+                    t.a({
+                        'class': 'resubmit-initial',
+                        'style': s({
+                            'display': 'none' if not data['input_has_initial'] else None}),
+                        'href': getattr(data['value'], 'url',  None),
+                        'target': '_blank'},
+                        force_unicode(data['value']) if data['input_has_initial'] else u' '),
+                    t.html(data['input'], {
+                        'class': 'resubmit-input'}),
+                    t.div({
+                        'class': 'resubmit-clear',
+                        'style': s({
+                            'display': 'none' if not data['input_has_initial'] else None})},
+                        t.html(data['clear_checkbox'], {
+                            'class': 'resubmit-clear__checkbox'}),
+                        t.label({
+                            'for': data['clear_checkbox_id'],
+                            'class': 'resubmit-clear__label',},
+                            data['clear_checkbox_label'])),
+                    t.html(data['key_input']),
+                   )
 
     def _hidden_keyname(self, name):
         return "%s-cachekey" % name
@@ -125,4 +146,55 @@ class FileWidget(AdminFileWidget):
 
     def set_storage(self, value):
         self._storage = value
+
+
+################################################################################
+# Html builder
+
+def attributes(value):
+    return dict(filter(lambda kv: True if kv[1] is not None else False, value.items()))
+
+
+class StyleBuilder(object):
+
+    def __call__(self, data):
+        return u"; ".join(u"%s:%s" % kv for kv in attributes(data).items())
+
+    def px(self, value):
+        return u"%dpx" % value
+
+
+class HtmlBuilder(object):
+
+    def __call__(self, tag, *args):
+        if tag == 'html':
+            elem = ET.fromstring(args[0])
+            args = args[1:]
+        elif tag == 'text':
+            return u"".join(args)
+        else: 
+            elem = ET.Element(tag)
+        for item in args:
+            if item is None:
+                continue
+            if isinstance(item, dict):
+                attrib = attributes(item)
+                if 'class' in attrib and 'class' in elem.attrib:
+                    class_set = elem.attrib['class'].split()
+                    for cls in attrib['class'].split():
+                        if cls not in class_set:
+                            class_set += [cls]
+                    attrib['class'] = u' '.join(class_set)
+                elem.attrib.update(attrib)
+            elif ET.iselement(item):
+                elem.append(item)
+            else:
+                if len(elem):
+                    elem[-1].tail = (elem[-1].tail or u"") + unicode(item)
+                else:
+                    elem.text = (elem.text or u"") + unicode(item)
+        return elem
+
+    def __getattr__(self, tag):
+        return functools.partial(self, tag)
 

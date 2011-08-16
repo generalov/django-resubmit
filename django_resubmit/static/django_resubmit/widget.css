@@ -11,6 +11,32 @@
 .resubmit-preview {
 	display: block;
     text-align: center;
+        float: left;
+        margin-right: 1em;
 }
+
+.resubmit-initial {
+        display: block;
+        height: 1.5em;
+        clear: right;
+}
+
 .resubmit-preview__image {
+}
+
+.resubmit-clear__label{
+        float: left;
+        padding: 0 !important;
+        margin: .5em 0;
+}
+
+ .resubmit-clear__checkbox {
+        float: left;
+        padding: 0;
+        margin: .5em .25em .5em .5em;
+}
+
+.resubmit-input{
+        float: left;
+        display: block;
 }
