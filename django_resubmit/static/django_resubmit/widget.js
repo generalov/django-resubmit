@@ -1,5 +1,8 @@
 ;(function($, undefined){
 
+   var t = $('script[src$="/django_resubmit/widget.js"]').attr('src'),
+       STATIC_URL = t.substring(0, t.length - 'django_resubmit/widget.js'.length);
+
    function ResubmitPreview(element, options) {
             this.element = element;
             this.options = $.extend(true, this.options, options || {});
@@ -9,7 +12,7 @@
     $.extend(ResubmitPreview.prototype, {
         options: {
             maxDataLength: 1024 * 1024,
-            trobberUrl: '/static/django_resubmit/throbber.gif',
+            trobberUrl: STATIC_URL + 'django_resubmit/throbber.gif',
             action: '/django_resubmit/'
         },
 
