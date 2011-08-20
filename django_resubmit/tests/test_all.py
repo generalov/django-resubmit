@@ -1,7 +1,6 @@
 # coding: utf-8
 from __future__ import absolute_import
 
-import re
 import os
 import unittest
 
@@ -11,11 +10,10 @@ from django.http import HttpResponse
 from django.conf.urls.defaults import patterns, url, include
 from django.test import TestCase
 from django_webtest import WebTest
+from .tools import CacheMock
+from .tools import MediaStub
+from .tools import RequestFactory
 
-
-from . import CacheMock
-from . import MediaStub
-from . import RequestFactory
 from ..widgets import FileWidget
 from ..widgets import FILE_INPUT_CONTRADICTION
 from ..storage import TemporaryFileStorage
@@ -48,7 +46,7 @@ UPLOAD_TEMPLATE = u"""
 
 class SampleForm(forms.Form):
     name = forms.CharField(max_length=25)
-    file = forms.FileField(widget=FileWidget())
+    file = forms.FileField(widget=FileWidget)
 
 
 def view_upload_file(request):
@@ -109,9 +107,9 @@ class FormTest(WebTest):
         global urlpatterns
         urlpatterns = patterns('',
             url(r'^$', view_upload_file),
-            url(r'^thumbnail/$', include('django_resubmit.urls')),
+            url(r'^thumbnail/', include('django_resubmit.urls', namespace='django_resubmit')),
         )
-        self.app.relative_to = os.path.dirname(__file__)
+        self.app.relative_to = os.path.join(os.path.dirname(__file__), '..')
         self.media = MediaStub(media_url='/media/')
 
     def tearDown(self):
@@ -140,23 +138,23 @@ class FormTest(WebTest):
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
 
-        self.assertTrue(u'Currently: test.txt' in response.unicode_body,
+        self.assertTrue('href' not in response.lxml.xpath("//a[contains(@class, 'resubmit-initial')]")[0], 
                 u"Should show cached file without link")
 
     def test_if_thumb_is_rendered_on_submit_errors(self):
         """ Check thumb generation for image files on submit errors"""
 
         response = self.app.get('/')
+        
         form = response.forms[0]
         form['file'] = ['fixtures/test-image.png']
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
-
-        preview_match = re.search(ur'<img alt="preview" src="([^"]+)" />',
-                response.unicode_body)
-        self.assertTrue(preview_match,
+        
+        preview_url = response.lxml.xpath("//img[contains(@class, 'resubmit-preview__image')]")[0].attrib.get('src')
+        self.assertTrue(preview_url,
                 u"page contains an <img> tag with preview")
-        preview_url = preview_match.group(1)
+        
         preview_response = self.app.get(preview_url)
         self.assertEquals(preview_response.status_int, HttpResponseOk.status_code,
                 u"preview available for download")
@@ -175,7 +173,7 @@ class ClearTest(unittest.TestCase):
             'file': self.factory.file('test.txt', 'test content')})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
-        self.assertTrue('clear' not in output, output)
+        self.assertTrue('resubmit-clear' not in output, output)
 
     def test_should_display_clear_checkbox_then_does_not_required(self):
         widget = self.widget
@@ -184,7 +182,7 @@ class ClearTest(unittest.TestCase):
             'file': self.factory.file('test.txt', 'test content')})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
-        self.assertTrue('<input type="checkbox" name="file-clear"' in output, output)
+        self.assertTrue('resubmit-clear' in output, output)
 
     def test_should_not_to_hold_a_file_on_cotradiction(self):
         backend = CacheMock()

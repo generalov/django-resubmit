@@ -1,5 +1,4 @@
 import os
-import re
 
 from django_webtest import WebTest
 from django.conf.urls.defaults import patterns, include, url
@@ -36,7 +35,7 @@ class AdminEditTopicTest(WebTest):
     def test_should_see_icon_preview(self):
         response = self.app.get('/admin/testapp/topic/%d/' % self.topic.pk,
                 user=self.superuser)
-        preview_url = response.lxml.xpath("//img[@alt='preview']/@src")[0]
+        preview_url = response.lxml.xpath("//img[contains(@class, 'resubmit-preview__image')]/@src")[0]
         preview_response = self.app.get(preview_url)
         self.assertEquals(200, preview_response.status_int,
                 u"preview available for download")

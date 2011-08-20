@@ -60,13 +60,17 @@ class FileWidget(ClearableFileInput):
         return upload
 
     def render(self, name, value, attrs=None):
-        default_attrs = {'class':'resubmit'}
-        attrs = attrs or {}
-        attrs.update(default_attrs)
-        checkbox_name = self.clear_checkbox_name(name)
-        checkbox_id = self.clear_checkbox_id(checkbox_name)
-        width, height = self.thumb_size
-        thumbnail_url = self._thumbnail(value)
+        try:
+            default_attrs = {'class':'resubmit'}
+            attrs = attrs or {}
+            attrs.update(default_attrs)
+            checkbox_name = self.clear_checkbox_name(name)
+            checkbox_id = self.clear_checkbox_id(checkbox_name)
+            width, height = self.thumb_size
+            thumbnail_url = self._thumbnail(value)
+        except Exception, e:
+            print e
+            raise
         
         data = {'name': name,
                 'value': value,
@@ -124,7 +128,7 @@ class FileWidget(ClearableFileInput):
                         t.label({
                             'for': data['clear_checkbox_id'],
                             'class': 'resubmit-clear__label',},
-                            data['clear_checkbox_label'])),
+                            data['clear_checkbox_label'])) if not data['is_required'] else None,
                     t.html(data['key_input']),
                    )
 
@@ -151,14 +155,14 @@ class FileWidget(ClearableFileInput):
 ################################################################################
 # Html builder
 
-def attributes(value):
-    return dict(filter(lambda kv: True if kv[1] is not None else False, value.items()))
+def filter_attributes(value):
+    return dict(filter(lambda kv: False if kv[1] is None or kv in set([('style', ''), ('class', '')]) else True, value.items()))
 
 
 class StyleBuilder(object):
 
     def __call__(self, data):
-        return u"; ".join(u"%s:%s" % kv for kv in attributes(data).items())
+        return u"; ".join(u"%s:%s" % kv for kv in filter_attributes(data).items())
 
     def px(self, value):
         return u"%dpx" % value
@@ -178,14 +182,13 @@ class HtmlBuilder(object):
             if item is None:
                 continue
             if isinstance(item, dict):
-                attrib = attributes(item)
-                if 'class' in attrib and 'class' in elem.attrib:
+                if 'class' in item and 'class' in elem.attrib:
                     class_set = elem.attrib['class'].split()
-                    for cls in attrib['class'].split():
+                    for cls in item['class'].split():
                         if cls not in class_set:
                             class_set += [cls]
-                    attrib['class'] = u' '.join(class_set)
-                elem.attrib.update(attrib)
+                    item['class'] = u' '.join(class_set)
+                elem.attrib.update(filter_attributes(item))
             elif ET.iselement(item):
                 elem.append(item)
             else:
