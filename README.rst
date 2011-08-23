@@ -134,8 +134,9 @@ Use virtualenv::
 Bugs and TODO
 =============
 
-* Handle thumbnail urls.
-* The ability to customize and expand the set of preview methods.
+* The ability to manage cleaning of orphaned uploads and their thumbnails.
+* Impose restrictions on django-resubmit views to prevent undesirable activity.
+* Improve UI for file uploads (try https://github.com/blueimp/jQuery-File-Upload).
 * Write documentation.
 * Commit into the Django.
 
