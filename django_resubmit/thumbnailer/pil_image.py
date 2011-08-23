@@ -45,6 +45,7 @@ class Thumbnail(IThumbnail):
         """Return thumbnail as file-like object."""
         buf = StringIO()
         self.__im.save(buf, self.__format)
+        buf.seek(0)
         return buf
 
 

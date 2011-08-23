@@ -39,6 +39,7 @@ class Thumbnail(IThumbnail):
         return self.__url
 
     def as_file(self):
+        self.__dt.dest.seek(0)
         return self.__dt.dest
 
 
