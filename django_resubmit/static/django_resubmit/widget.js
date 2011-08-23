@@ -88,7 +88,12 @@
         remotePreview: function(){
             var self = this,
                 field = this.file_input.get(0),
-                action = this.options.action;
+                action = this.options.action,
+                previous_key = this.key_input.val();
+
+            if (previous_key){
+                action += '?key=' + encodeURIComponent(previous_key);
+            }
 
             // Try not setting the response to application/json.
             // All "AJAX" file uploads must use iframes, thus a traditional 

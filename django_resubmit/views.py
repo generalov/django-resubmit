@@ -33,9 +33,13 @@ class Resubmit(View):
                     content_type="text/plain",
                     content=simplejson.dumps({'error': "file is required"}))
 
+        previous_key = self.request.GET.get('key', None)
         storage = get_default_storage()
         upload = self.request.FILES.values()[0]
         key = storage.put_file(upload)
+
+        if previous_key:
+            storage.clear_file(previous_key)
 
         data = {'key': key,
                 'upload': {'name': upload.name}}
