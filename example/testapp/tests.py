@@ -19,6 +19,7 @@ class AdminEditTopicTest(WebTest):
                 password=u'letmein')
         urlpatterns = patterns('',
             url(r'^admin/', include(admin.site.urls)),
+            url(r'^django_resubmit/', include('django_resubmit.urls', namespace="django_resubmit")),
             *self.media.url_patterns())
 
         response = self.app.get('/admin/testapp/topic/add/',
@@ -35,7 +36,9 @@ class AdminEditTopicTest(WebTest):
     def test_should_see_icon_preview(self):
         response = self.app.get('/admin/testapp/topic/%d/' % self.topic.pk,
                 user=self.superuser)
-        preview_url = response.lxml.xpath("//img[contains(@class, 'resubmit-preview__image')]/@src")[0]
+        preview_url = response.lxml.xpath("//img[contains(@class, 'resubmit-preview__image')]")[0].attrib.get('src')
+        self.assertTrue(preview_url,
+                "Preview url should be not empty")
         preview_response = self.app.get(preview_url)
         self.assertEquals(200, preview_response.status_int,
                 u"preview available for download")

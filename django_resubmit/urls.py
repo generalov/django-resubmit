@@ -7,5 +7,5 @@ from .views import Preview, Resubmit
 
 urlpatterns = patterns('django_resubmit.views',
     url(r'^$', Resubmit.as_view(), name='create'),
-    url(r'^(?P<key>\w+)/$', Preview.as_view(), name='preview'),
+    url(r'^preview/$', Preview.as_view(), name='preview'),
 )

@@ -1,55 +1,62 @@
-import os
-import urllib
-import mimetypes
-import Image
- 
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db.models.fields.files import FieldFile
+from __future__ import absolute_import
 
+import os
+from urllib import urlencode
+
+from cStringIO import StringIO
 from django.conf import settings
-from django.utils.encoding import smart_str, force_unicode
-from sorl.thumbnail.base import Thumbnail, ThumbnailException as SorlThumbnailException
+from django.core.urlresolvers import reverse
+from django.utils.encoding import filepath_to_uri, force_unicode
+from sorl.thumbnail.base import (
+        Thumbnail as SorlThumbnail,
+        ThumbnailException as SorlThumbnailException)
 from sorl.thumbnail.main import get_thumbnail_setting, build_thumbnail_name
 from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
 
-
-class ThumbnailException(Exception): pass
-
-
-def can_create_thumbnail(upload):
-    try:
-        mimetype = _guess_type(upload) 
-        return mimetype in set([
-                        'image/bmp',
-                        'image/png', 'image/jpeg', 'image/gif',
-                        'image/x-icon', 'image/vnd.microsoft.icon',
-                    ])
-    except Exception:
-        return False
-
-def _guess_type(value):
-    if isinstance(value, InMemoryUploadedFile):
-        return value.content_type
-
-    if isinstance(value, FieldFile):
-        upload  = value.file
-    else:
-        upload = value
-
-    guess_types = mimetypes.guess_type(upload.name)
-    if guess_types and isinstance(guess_types, tuple):
-        return guess_types[0]
-
-def create_thumbnail(size, source, destination=None):
-    try:
-        return DjangoThumbnail(relative_source=source,
-                relative_dest=destination,
-                requested_size=size)
-    except (SorlThumbnailException, IOError), e:
-        raise ThumbnailException(e)
+from . import FilesystemResource
+from .interfaces import IThumbnail, IThumbnailer, ThumbnailException
 
 
-class DjangoThumbnail(Thumbnail):
+class Thumbnail(IThumbnail):
+
+    def __init__(self, size, django_thumbnail, source_path):
+        self.__dt = django_thumbnail
+        self.__url =  getattr(self.__dt, 'absolute_url', reverse('django_resubmit:preview') + '?' + urlencode({'path': source_path.encode('utf-8')}))
+        self.__size = size
+
+    @property
+    def mime_type(self):
+        extension = get_thumbnail_setting('EXTENSION')
+        subtype = 'jpeg' if extension == 'jpg' else extension
+        return 'image/%s'  % subtype
+
+    @property
+    def size(self):
+        return self.__size
+
+    @property
+    def url(self):
+        return self.__url
+
+    def as_file(self):
+        return self.__dt.dest
+
+
+class Thumbnailer(IThumbnailer):
+
+    def create_thumbnail(self, size, source):
+        try:
+            if isinstance(source, FilesystemResource):
+                t = _DjangoThumbnail(relative_source=source.path, requested_size=size)
+            else:
+                t = _DjangoThumbnail(relative_source=source.as_file(), relative_dest=StringIO(), requested_size=size)
+            return Thumbnail(size, t, source.path)
+        except (SorlThumbnailException, IOError), e:
+            raise ThumbnailException(e)
+
+
+
+class _DjangoThumbnail(SorlThumbnail):
     imagemagick_file_types = get_thumbnail_setting('IMAGEMAGICK_FILE_TYPES')
 
     def __init__(self, relative_source, requested_size, opts=None,
@@ -71,7 +78,7 @@ class DjangoThumbnail(Thumbnail):
 
         # Call super().__init__ now to set the opts attribute. generate() won't
         # get called because we are not setting the dest attribute yet.
-        super(DjangoThumbnail, self).__init__(source, requested_size,
+        super(_DjangoThumbnail, self).__init__(source, requested_size,
             opts=opts, quality=quality, convert_path=convert_path,
             wvps_path=wvps_path, processors=processors)
 
@@ -93,7 +100,7 @@ class DjangoThumbnail(Thumbnail):
 
         # Set the relative & absolute url to the thumbnail
         if not filelike:
-            self.relative_url = self._path_to_uri(relative_dest)
+            self.relative_url = filepath_to_uri(relative_dest)
             self.absolute_url = '%s%s' % (settings.MEDIA_URL,
                                           self.relative_url)
 
@@ -114,16 +121,3 @@ class DjangoThumbnail(Thumbnail):
     def __unicode__(self):
         return self.absolute_url
 
-    def _path_to_uri(self, path):
-        """Convert an file system path to a URI portion that is suitable for
-        inclusion in a URL.
-
-        We are assuming input is either UTF-8 or unicode already and want to
-        reproduce behaviour of encodeURIComponent() JavaScript function.
-
-        Returns an ASCII string containing the encoded result.
-        """
-        if path is None:
-            return path
-        return urllib.quote('/'.join(smart_str(path).split(os.sep)),
-                            safe='/!~*()')

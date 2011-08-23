@@ -138,23 +138,23 @@ class FormTest(WebTest):
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
 
-        self.assertTrue('href' not in response.lxml.xpath("//a[contains(@class, 'resubmit-initial')]")[0], 
+        self.assertTrue('href' not in response.lxml.xpath("//a[contains(@class, 'resubmit-initial')]")[0],
                 u"Should show cached file without link")
 
     def test_if_thumb_is_rendered_on_submit_errors(self):
         """ Check thumb generation for image files on submit errors"""
 
         response = self.app.get('/')
-        
+
         form = response.forms[0]
         form['file'] = ['fixtures/test-image.png']
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
-        
+
         preview_url = response.lxml.xpath("//img[contains(@class, 'resubmit-preview__image')]")[0].attrib.get('src')
         self.assertTrue(preview_url,
                 u"page contains an <img> tag with preview")
-        
+
         preview_response = self.app.get(preview_url)
         self.assertEquals(preview_response.status_int, HttpResponseOk.status_code,
                 u"preview available for download")

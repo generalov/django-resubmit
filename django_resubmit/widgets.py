@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 
 import functools
-from django.core.urlresolvers import reverse
 from django.forms.widgets import CheckboxInput, ClearableFileInput, HiddenInput, Input
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.safestring import mark_safe
@@ -11,7 +10,7 @@ from  xml.etree import cElementTree as ET
 
 from .conf import settings
 from .storage import get_default_storage
-from .thumbnails import can_create_thumbnail, create_thumbnail, ThumbnailException
+from .thumbnailer import ThumbnailManager
 
 
 FILE_INPUT_CLEAR = False
@@ -60,26 +59,28 @@ class FileWidget(ClearableFileInput):
         return upload
 
     def render(self, name, value, attrs=None):
-        try:
-            default_attrs = {'class':'resubmit'}
-            attrs = attrs or {}
-            attrs.update(default_attrs)
-            checkbox_name = self.clear_checkbox_name(name)
-            checkbox_id = self.clear_checkbox_id(checkbox_name)
-            width, height = self.thumb_size
-            thumbnail_url = self._thumbnail(value)
-        except Exception, e:
-            print e
-            raise
+        default_attrs = {'class':'resubmit'}
+        attrs = attrs or {}
+        attrs.update(default_attrs)
+        checkbox_name = self.clear_checkbox_name(name)
+        checkbox_id = self.clear_checkbox_id(checkbox_name)
         
+        thumbnail = self._thumbnail(self.thumb_size, value)
+        if thumbnail:
+            width, height = thumbnail.size
+            thumbnail_url = thumbnail.url
+        else:
+            width, height = self.thumb_size
+            thumbnail_url = None
+
         data = {'name': name,
                 'value': value,
-                'width': width,
-                'height': height,
                 'input': Input().render(name, None, self.build_attrs(attrs, type=self.input_type)),
                 'input_text': self.input_text,
                 'input_has_initial': value and (hasattr(value, "url") or self.hidden_key),
                 'initial_text': self.initial_text,
+                'initial_name': force_unicode(value.name) if value else None,
+                'initial_url': value.url if hasattr(value, 'url') else None,
                 'is_required': self.is_required,
                 'key_input': HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}),
                 'thumbnail_url': thumbnail_url,
@@ -87,6 +88,8 @@ class FileWidget(ClearableFileInput):
                 'clear_checkbox_id': checkbox_id,
                 'clear_checkbox_name': checkbox_name,
                 'clear_checkbox_label': self.clear_checkbox_label,
+                'preview_width': width,
+                'preview_height': height,
         }
 
         return mark_safe(force_unicode(ET.tostring(self._html(data))))
@@ -99,14 +102,14 @@ class FileWidget(ClearableFileInput):
                     t.div({
                         'class': 'resubmit-preview',
                         'style': s({
-                            'width': s.px(data['width']),
-                            'height': s.px(data['height']),
+                            'width': s.px(data['preview_width']),
+                            'height': s.px(data['preview_height']),
                             'display': 'none' if not data['thumbnail_url'] else None})},
                         t.img({
                             'class': 'resubmit-preview__image',
                             'style': s({
-                                'max-width': s.px(data['width']),
-                                'max-height': s.px(data['height']),
+                                'max-width': s.px(data['preview_width']),
+                                'max-height': s.px(data['preview_height']),
                                 }),
                             #'alt': 'preview',
                             'src': data['thumbnail_url'] or None})),
@@ -114,9 +117,9 @@ class FileWidget(ClearableFileInput):
                         'class': 'resubmit-initial',
                         'style': s({
                             'display': 'none' if not data['input_has_initial'] else None}),
-                        'href': getattr(data['value'], 'url',  None),
+                        'href': data['initial_url'],
                         'target': '_blank'},
-                        force_unicode(data['value']) if data['input_has_initial'] else u' '),
+                        data['initial_name'] or u' '),
                     t.html(data['input'], {
                         'class': 'resubmit-input'}),
                     t.div({
@@ -134,19 +137,20 @@ class FileWidget(ClearableFileInput):
 
     def _hidden_keyname(self, name):
         return "%s-cachekey" % name
-    
-    def _thumbnail(self, value):
+
+    def _thumbnail(self, size, value):
         """ Make thumbnail and return url"""
-        if self.hidden_key and can_create_thumbnail(value):
-            return reverse('django_resubmit:preview', args=[self.hidden_key])
+        if self.hidden_key:
+            path = self.hidden_key
         elif hasattr(value, 'url'):
-            try:
-                image_path = unicode(value)
-                t = create_thumbnail(self.thumb_size, image_path)
-                return t.absolute_url
-            except ThumbnailException:
-                return ''
-        return ''
+            path = value.name
+        else:
+            return None
+        try:
+            thumbnail_manager = ThumbnailManager()
+            return thumbnail_manager.thumbnail(size, path)
+        except Exception:
+            return None
 
     def set_storage(self, value):
         self._storage = value
@@ -176,7 +180,7 @@ class HtmlBuilder(object):
             args = args[1:]
         elif tag == 'text':
             return u"".join(args)
-        else: 
+        else:
             elem = ET.Element(tag)
         for item in args:
             if item is None:
