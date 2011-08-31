@@ -9,34 +9,35 @@
 }
 
 .resubmit-preview {
-	display: block;
+    display: block;
+    float: left;
     text-align: center;
-        float: left;
-        margin-right: 1em;
+    margin-right: 1em;
 }
 
 .resubmit-initial {
-        display: block;
-        height: 1.5em;
-        clear: right;
+    display: block;
+    clear: right;
+    height: 1.5em;
 }
 
 .resubmit-preview__image {
 }
 
 .resubmit-clear__label{
-        float: left;
-        padding: 0 !important;
-        margin: .5em 0;
+    float: left;
+    padding: 0 !important;
+    margin: .5em 0;
 }
 
- .resubmit-clear__checkbox {
-        float: left;
-        padding: 0;
-        margin: .5em .25em .5em .5em;
+.resubmit-clear__checkbox {
+    float: left;
+    padding: 0;
+    margin: .5em .25em .5em .5em;
 }
 
 .resubmit-input{
-        float: left;
-        display: block;
+    display: block;
+    float: left;
+    margin-top: 3px;
 }

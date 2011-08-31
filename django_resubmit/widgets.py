@@ -23,13 +23,14 @@ class FileWidget(ClearableFileInput):
               settings.STATIC_URL + 'django_resubmit/widget.js',)
 
     def __init__(self, *args, **kwargs):
+        self.template = 'django_resubmit/widget.html'
         self.thumb_size = settings.RESUBMIT_THUMBNAIL_SIZE
         self.set_storage(get_default_storage())
         self.resubmit_key = u""
         super(FileWidget, self).__init__(*args, **kwargs)
 
     def value_from_datadict(self, data, files, name):
-        self.resubmit_key = data.get(self._resubmit_keyname(name), "")
+        self.resubmit_key = data.get(self._resubmit_keyname(name), u"")
 
         upload = super(FileWidget, self).value_from_datadict(data, files, name)
 
@@ -70,31 +71,31 @@ class FileWidget(ClearableFileInput):
             width, height = self.thumb_size
             thumbnail_url = None
 
-        data = {# Field
+        data = {## Field
                 'name': name,
                 'value': value,
                 'input': Input().render(name, None, self.build_attrs(attrs, type=self.input_type)),
-                'input_text': self.input_text,
+                #'input_text': self.input_text,
                 'is_required': self.is_required,
-                # Initial (current) value
+                ## Initial (current) value
                 'input_has_initial': value and (hasattr(value, "url") or self.resubmit_key),
                 'initial_text': self.initial_text,
                 'initial_name': force_unicode(value.name) if value else None,
                 'initial_url': value.url if hasattr(value, 'url') else None,
-                # Clear value
+                ## Clear value
                 'clear_checkbox': CheckboxInput().render(checkbox_name, False, attrs={'id': checkbox_id}),
                 'clear_checkbox_id': checkbox_id,
                 'clear_checkbox_name': checkbox_name,
                 'clear_checkbox_label': self.clear_checkbox_label,
-                # Resubmit
-                'resubmit_key_input': HiddenInput().render(self._resubmit_keyname(name), self.resubmit_key or '', {}),
-                # Preview
+                ## Resubmit
+                'resubmit_key_input': HiddenInput().render(self._resubmit_keyname(name), self.resubmit_key or u'', {}),
+                ## Preview
                 'thumbnail_url': thumbnail_url,
                 'preview_width': width,
                 'preview_height': height,
         }
 
-        return template.loader.render_to_string('django_resubmit/widget.html', data)
+        return template.loader.render_to_string(self.template, data)
 
     def _resubmit_keyname(self, name):
         return "%s-cachekey" % name
