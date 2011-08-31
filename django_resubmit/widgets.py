@@ -25,34 +25,33 @@ class FileWidget(ClearableFileInput):
     def __init__(self, *args, **kwargs):
         self.thumb_size = settings.RESUBMIT_THUMBNAIL_SIZE
         self.set_storage(get_default_storage())
-        self.hidden_key = u""
-        self.isSaved = False
+        self.resubmit_key = u""
         super(FileWidget, self).__init__(*args, **kwargs)
 
     def value_from_datadict(self, data, files, name):
-        self.hidden_key = data.get(self._hidden_keyname(name), "")
+        self.resubmit_key = data.get(self._resubmit_keyname(name), "")
 
         upload = super(FileWidget, self).value_from_datadict(data, files, name)
 
         # user checks 'clear' or checks 'clear' and uploads a file
         if upload is FILE_INPUT_CLEAR or upload is FILE_INPUT_CONTRADICTION:
-            if self.hidden_key:
-                self._storage.clear_file(self.hidden_key)
-                self.hidden_key = u""
+            if self.resubmit_key:
+                self._storage.clear_file(self.resubmit_key)
+                self.resubmit_key = u""
             return upload
 
         if files and name in files:
-            if self.hidden_key:
-                self._storage.clear_file(self.hidden_key)
+            if self.resubmit_key:
+                self._storage.clear_file(self.resubmit_key)
             upload = files[name]
-            self.hidden_key = self._storage.put_file(upload)
-        elif self.hidden_key:
-            restored = self._storage.get_file(self.hidden_key, name)
+            self.resubmit_key = self._storage.put_file(upload)
+        elif self.resubmit_key:
+            restored = self._storage.get_file(self.resubmit_key, name)
             if restored:
                 upload = restored
                 files[name] = upload
             else:
-                self.hidden_key = u""
+                self.resubmit_key = u""
 
         return upload
 
@@ -78,7 +77,7 @@ class FileWidget(ClearableFileInput):
                 'input_text': self.input_text,
                 'is_required': self.is_required,
                 # Initial (current) value
-                'input_has_initial': value and (hasattr(value, "url") or self.hidden_key),
+                'input_has_initial': value and (hasattr(value, "url") or self.resubmit_key),
                 'initial_text': self.initial_text,
                 'initial_name': force_unicode(value.name) if value else None,
                 'initial_url': value.url if hasattr(value, 'url') else None,
@@ -88,7 +87,7 @@ class FileWidget(ClearableFileInput):
                 'clear_checkbox_name': checkbox_name,
                 'clear_checkbox_label': self.clear_checkbox_label,
                 # Resubmit
-                'resubmit_key_input': HiddenInput().render(self._hidden_keyname(name), self.hidden_key or '', {}),
+                'resubmit_key_input': HiddenInput().render(self._resubmit_keyname(name), self.resubmit_key or '', {}),
                 # Preview
                 'thumbnail_url': thumbnail_url,
                 'preview_width': width,
@@ -97,13 +96,13 @@ class FileWidget(ClearableFileInput):
 
         return template.loader.render_to_string('django_resubmit/widget.html', data)
 
-    def _hidden_keyname(self, name):
+    def _resubmit_keyname(self, name):
         return "%s-cachekey" % name
 
     def _thumbnail(self, size, value):
         """ Make thumbnail and return url"""
-        if self.hidden_key:
-            path = self.hidden_key
+        if self.resubmit_key:
+            path = self.resubmit_key
         elif hasattr(value, 'url'):
             path = value.name
         else:

@@ -209,7 +209,7 @@ class ClearTest(unittest.TestCase):
         self.assertEquals(len(backend._data.keys()), 1, "File should be hodled")
 
         request = self.factory.post('/', {
-            'file-cachekey': widget.hidden_key,
+            'file-cachekey': widget.resubmit_key,
             'file-clear': 'on', })
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, False, "Upload should be False")
