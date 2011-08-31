@@ -42,18 +42,11 @@ class ThumbnailManager(object):
         description = self._get_thumbnailer_description(mimetype)
         if not description:
             raise UnsupportedMimeType(mimetype)
-
         loader = description['NAME']
-        module, attr = loader.rsplit('.', 1)
         try:
-            mod = import_module(module)
+            Thumbnailer = import_name(loader)
         except ImportError, e:
-            raise ImproperlyConfigured('Error importing template source loader %s: "%s"' % (loader, e))
-        try:
-            Thumbnailer = getattr(mod, attr)
-        except AttributeError, e:
-            raise ImproperlyConfigured('Error importing template source loader %s: "%s"' % (loader, e))
-
+            raise ImproperlyConfigured('Error importing thumbnailer %s: "%s"' % (loader, e))
         return Thumbnailer()
 
     def _get_thumbnailer_description(self, mimetype):
@@ -112,4 +105,13 @@ class FilesystemResource(IResource):
             return guess_types[0]
 
         raise CantGuessMimeType("%s" % str(value))
+
+
+def import_name(name):
+    module, attr = name.rsplit('.', 1)
+    mod = import_module(module)
+    try:
+        return getattr(mod, attr)
+    except AttributeError:
+        raise ImportError("'%s' module has no attribute '%s'" % (module, attr))
 

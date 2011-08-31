@@ -20,7 +20,7 @@
             var frame = $(this.element).closest('.resubmit-widget');
             this.file_input = $(this.element);
             this.file_link = $('a', frame);
-            this.key_input = $('input[type=hidden]', frame);
+            this.resubmit_key_input = $('input[type=hidden]', frame);
             this.preview = $('.resubmit-preview', frame);
             this.preview_image = $('.resubmit-preview__image', frame);
             this.initial = $('.resubmit-initial', frame);
@@ -89,7 +89,7 @@
             var self = this,
                 field = this.file_input.get(0),
                 action = this.options.action,
-                previous_key = this.key_input.val();
+                previous_key = this.resubmit_key_input.val();
 
             if (previous_key){
                 action += '?key=' + encodeURIComponent(previous_key);
@@ -117,7 +117,7 @@
                     if (data.error) {
                         self.file_link.text(error);
                     } else {
-                        self.key_input.val(data.key);
+                        self.resubmit_key_input.val(data.key);
 
                         if (data.preview) {
                             self.updatePreview(data.preview.url);

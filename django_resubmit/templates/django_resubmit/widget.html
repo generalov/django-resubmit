@@ -1,0 +1,21 @@
+<div class="resubmit-widget">
+    <div class="resubmit-preview" style="width:{{ preview_width }}px; height:{{ preview_height }}px;{% if not thumbnail_url %} display:none;{% endif %}">
+        <img class="resubmit-preview__image"{% if thumbnail_url %} src="{{ thumbnail_url }}"{% endif %} style="max-width:{{ preview_width}}px; max-height:{{ preview_height }}px"/>
+    </div>
+
+    <a class="resubmit-initial" href="{{ initial_url }}"{% if not input_has_initial %} style="display:none"{% endif %} target="_blank">{{ initial_name }}</a>
+
+    {{ input }}
+
+    {% if not is_required %}
+    <div class="resubmit-clear"{% if not input_has_initial %}style="display: none"{% endif %}>
+        {{ clear_checkbox }}
+        <label class="resubmit-clear__label" for="{{ clear_checkbox_id }}">
+            {{ clear_checkbox_label }}
+        </label>
+    </div>
+    {% endif %}
+
+    {{ resubmit_key_input }}
+</div>
+
