@@ -9,7 +9,7 @@ setup(
     version="0.6",
     license = 'BSD',
     description="Resubmitable file widgets for Django",
-    packages=['django_resubmit'],
+    packages=['django_resubmit', 'django_resubmit.thumbnailer'],
     package_data={'django_resubmit': ['static/django_resubmit/*']},
     classifiers = [
         'Development Status :: 3 - Alpha',
