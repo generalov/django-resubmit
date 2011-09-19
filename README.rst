@@ -16,17 +16,18 @@ Configuration
 Edit your ``settings.py`` and append ``django_resubmit`` to the
 ``INSTALLED_APPS``.  Also you must specify a ``resubmit`` cache backend, for
 example::
+    from django_resubmit.settings import *
 
     INSTALLED_APPS = (
         ...,
-        "django_resubmit",
+        'django_resubmit',
     )
 
     CACHES = {
         ...,
-        "resubmit": {
+        'resubmit': {
             'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-            "LOCATION": "/tmp/resubmit-data",
+            'LOCATION': '/tmp/resubmit-data',
         }
     }
 
@@ -47,7 +48,7 @@ Supply FileFiled with custom FileWidget widget::
 
 Add this url to urls.py::
 
-    url(r'^django_resubmit/', include('django_resubmit.urls', namespace="django_resubmit")),
+    url(r'^django_resubmit/', include('django_resubmit.urls', namespace='django_resubmit')),
 
 
 Advanced settings
@@ -55,10 +56,17 @@ Advanced settings
 
 There are several advanced settings.
 
+RESUBMIT_TEMPORARY_STORAGE
+   The storage to use. Default::
+
+    RESUBMIT_TEMPORARY_STORAGE = 'django_resubmit.storage.CacheTemporaryStorage'
+
 RESUBMIT_THUMBNAIL_SIZE
    The size of thumbnails (width, height)
 
-   Default: `(60, 60)`
+   Default::
+
+    RESUBMIT_THUMBNAIL_SIZE = (60, 60)
 
 RESUBMIT_THUMBNAILERS
    The thumbnailers to use.
@@ -67,8 +75,8 @@ RESUBMIT_THUMBNAILERS
 
     RESUBMIT_THUMBNAILERS = [
         {
-            "NAME": "django_resubmit.thumbnailer.pil_image.Thumbnailer",
-            "MIME_TYPES": (
+            'NAME': 'django_resubmit.thumbnailer.pil_image.Thumbnailer',
+            'MIME_TYPES': (
                 'image/bmp', 'image/x-ms-bmp',
                 'image/png', 'image/jpeg', 'image/gif',
                 'image/x-icon', 'image/vnd.microsoft.icon',)
@@ -77,8 +85,8 @@ RESUBMIT_THUMBNAILERS
 
 The built-in thumbnailers are::
 
-    "django_resubmit.thumbnailer.pil_image.Thumbnailer"
-    "django_resubmit.thumbnailer.sorl_legacy.Thumbnailer"
+    'django_resubmit.thumbnailer.pil_image.Thumbnailer'
+    'django_resubmit.thumbnailer.sorl_legacy.Thumbnailer'
 
 The thumbnailer should implement the ``IThumbnailer`` interface::
 

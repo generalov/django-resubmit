@@ -16,7 +16,7 @@ from .tools import RequestFactory
 
 from ..widgets import FileWidget
 from ..widgets import FILE_INPUT_CONTRADICTION
-from ..storage import TemporaryFileStorage
+from ..storage import CacheTemporaryStorage
 
 
 class HttpResponseOk(HttpResponse):
@@ -185,8 +185,8 @@ class ClearTest(unittest.TestCase):
         self.assertTrue('resubmit-clear' in output, output)
 
     def test_should_not_to_hold_a_file_on_cotradiction(self):
-        backend = CacheMock()
-        self.widget.set_storage(TemporaryFileStorage(backend=backend))
+        cache = CacheMock()
+        self.widget.storage = CacheTemporaryStorage(cache=cache)
 
         widget = self.widget
         widget.is_required = False
@@ -195,25 +195,25 @@ class ClearTest(unittest.TestCase):
             'file': self.factory.file('test.txt', 'test content')})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, FILE_INPUT_CONTRADICTION)
-        self.assertEquals(backend._data, {})
+        self.assertEquals(cache._data, {})
 
     def test_should_clear_when_clear_is_checked_and_no_any_file(self):
-        backend = CacheMock()
-        self.widget.set_storage(TemporaryFileStorage(backend=backend))
+        cache = CacheMock()
+        self.widget.storage = CacheTemporaryStorage(cache=cache)
 
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
             'file': self.factory.file('test.txt', 'test content')})
         widget.value_from_datadict(request.POST, request.FILES, 'file')
-        self.assertEquals(len(backend._data.keys()), 1, "File should be hodled")
+        self.assertEquals(len(cache._data.keys()), 1, "File should be hodled")
 
         request = self.factory.post('/', {
             'file-cachekey': widget.resubmit_key,
             'file-clear': 'on', })
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, False, "Upload should be False")
-        self.assertEquals(backend._data, {}, "Cache should be empty")
+        self.assertEquals(cache._data, {}, "Cache should be empty")
 
     def test_should_handle_large_files(self):
         """
@@ -225,13 +225,13 @@ class ClearTest(unittest.TestCase):
         I suppose we should store such files on the disk too, and place in
         the cache just metadata.
         """
-        backend = CacheMock()
-        self.widget.set_storage(TemporaryFileStorage(backend=backend))
+        cache = CacheMock()
+        self.widget.storage = CacheTemporaryStorage(cache=cache)
 
         widget = self.widget
         request = self.factory.post('/', {
             'file': self.factory.file('test.txt', 'x' * 10000000)})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
-        self.assertEquals(len(backend._data.keys()), 1, "Should to remember large file")
+        self.assertEquals(len(cache._data.keys()), 1, "Should to remember large file")
 

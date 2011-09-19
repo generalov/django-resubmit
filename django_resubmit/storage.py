@@ -1,4 +1,6 @@
 # coding: utf-8
+from __future__ import absolute_import
+
 import string
 import random
 import time
@@ -6,44 +8,40 @@ from cStringIO import StringIO
 from django.core.cache import get_cache
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from django_resubmit.conf import settings
+
+FIELD_FILE_NAME = 'name'
+FIELD_FILE_SIZE = 'size'
+FIELD_CONTENT_TYPE = 'content_type'
+FIELD_CHARSET = 'charset'
+FIELD_CONTENT = 'content'
+
+DJANGO_CACHE_NAME = 'resubmit'
 
 
-FIELD_FILE_NAME = "name"
-FIELD_FILE_SIZE = "size"
-FIELD_CONTENT_TYPE = "content_type"
-FIELD_CHARSET = "charset"
-FIELD_CONTENT = "content"
-
-def get_default_storage():
-    backend = get_cache(settings.BACKEND)
-    return TemporaryFileStorage(backend)
-
-
-class TemporaryFileStorage(object):
-    def __init__(self, backend, prefix=None):
+class CacheTemporaryStorage(object):
+    def __init__(self, cache=None, prefix=None):
         if prefix is None:
             prefix = 'cachefile-'
-        self.backend = backend
+        self.cache = cache or get_cache(DJANGO_CACHE_NAME)
         self.prefix = prefix
 
     def put_file(self, upload, key=None):
         upload.file.seek(0)
         if not key:
-            key = string.replace(unicode(random.random() * time.time()), ".", "")
+            key = self._generate_key()
         state = {
             FIELD_FILE_NAME: upload.name,
             FIELD_FILE_SIZE: upload.size,
             FIELD_CONTENT_TYPE: upload.content_type,
             FIELD_CHARSET: upload.charset,
             FIELD_CONTENT: upload.file.read()}
-        self.backend.set(self._getid(key), state)
+        self.cache.set(self._getid(key), state)
         upload.file.seek(0)
         return key
 
     def get_file(self, key, field_name):
         upload = None
-        state = self.backend.get(self._getid(key))
+        state = self.cache.get(self._getid(key))
         if state:
             size = state[FIELD_FILE_SIZE]
             file = StringIO()
@@ -59,7 +57,10 @@ class TemporaryFileStorage(object):
         return upload
 
     def clear_file(self, key):
-        self.backend.delete(self._getid(key))
+        self.cache.delete(self._getid(key))
+
+    def _generate_key(self):
+        return string.replace(str(random.random() * time.time()), '.', '')
 
     def _getid(self, key):
         return self.prefix + key

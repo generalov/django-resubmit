@@ -6,11 +6,18 @@ from distutils.core import setup
 
 setup(
     name="django-resubmit",
-    version="0.6",
+    version="0.7",
     license = 'BSD',
     description="Resubmitable file widgets for Django",
-    packages=['django_resubmit', 'django_resubmit.thumbnailer'],
-    package_data={'django_resubmit': ['static/django_resubmit/*']},
+    packages=[
+        'django_resubmit',
+        'django_resubmit.thumbnailer'],
+    package_data={
+        'django_resubmit': [
+            'static/django_resubmit/*',
+            'templates/django_resubmit/*',
+        ]
+    },
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Framework :: Django',

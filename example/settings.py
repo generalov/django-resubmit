@@ -3,6 +3,8 @@ import os
 ROOT = os.path.abspath(os.path.dirname(__file__))
 sitepath = lambda *xs: os.path.join(ROOT, *xs)
 
+from django_resubmit.settings import *
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 ADMINS = (

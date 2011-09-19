@@ -13,7 +13,7 @@ from sorl.thumbnail.base import (
 from sorl.thumbnail.main import get_thumbnail_setting, build_thumbnail_name
 from sorl.thumbnail.templatetags.thumbnail import PROCESSORS
 
-from . import FilesystemResource
+from .resources import FilesystemResource
 from .interfaces import IThumbnail, IThumbnailer, ThumbnailException
 
 
