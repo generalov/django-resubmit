@@ -1,0 +1,2 @@
+recursive-include django_resubmit/templates *
+recursive-include django_resubmit/static *
