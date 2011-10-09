@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from django.conf import settings
 
-from .thumbnailer.resources import ResourceManager, ThumbnailException
+from .thumbnailer.resources import ResourceLocator, ThumbnailException
 from .utils import import_configurable_object
 
 
@@ -14,7 +14,7 @@ def get_temporary_storage():
     return TemporaryStorage()
 
 def get_thumbnail(path):
-    locator = ResourceManager(get_temporary_storage())
+    locator = ResourceLocator(get_temporary_storage())
     resource = locator.resolve(path)
     thumbnail_factory = ThumbnailFactory(settings.RESUBMIT_THUMBNAILERS)
     thumbnailer = thumbnail_factory.get_thumbnailer(resource)

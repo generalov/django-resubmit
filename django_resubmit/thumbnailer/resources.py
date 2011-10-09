@@ -13,7 +13,7 @@ class CantGuessMimeType(ThumbnailException):
     pass
 
 
-class ResourceManager(object):
+class ResourceLocator(object):
 
     def __init__(self, temporary_storage):
         self.__temporary_storage = temporary_storage
