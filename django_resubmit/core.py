@@ -10,7 +10,7 @@ __all__ = ['get_temporary_storage', 'get_thumbnail', 'ThumbnailException']
 
 
 def get_temporary_storage():
-    TemporaryStorage = import_configurable_object(settings.RESUBMIT_TEMPORARY_STORAGE, u'temporary storage')
+    TemporaryStorage = import_configurable_object(settings.RESUBMIT_TEMPORARY_STORAGE, 'temporary storage')
     return TemporaryStorage()
 
 def get_thumbnail(path):
@@ -35,7 +35,7 @@ class ThumbnailFactory(object):
         description = self._get_thumbnailer_description(resource.mime_type)
         if not description:
             raise UnsupportedMimeType(resource.mime_type)
-        Thumbnailer = import_configurable_object(description['NAME'], u'thumbnailer')
+        Thumbnailer = import_configurable_object(description['NAME'], 'thumbnailer')
         return Thumbnailer()
 
     def _get_thumbnailer_description(self, mime_type):

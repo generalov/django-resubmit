@@ -3,16 +3,19 @@ from __future__ import absolute_import
 from django.core.urlresolvers import reverse
 
 try:
-    from cStringIO import StringIO
+    from io import BytesIO
 except ImportError:
-    from StringIO import StringIO
+    from cStringIO import StringIO as BytesIO
 
 try:
     from PIL import Image
 except ImportError:
     import Image
 
-from urllib import urlencode
+try:
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib import urlencode
 
 from .interfaces import IThumbnailer, IThumbnail
 
@@ -43,7 +46,7 @@ class Thumbnail(IThumbnail):
 
     def as_file(self):
         """Return thumbnail as file-like object."""
-        buf = StringIO()
+        buf = BytesIO()
         self.__im.save(buf, self.__format)
         buf.seek(0)
         return buf

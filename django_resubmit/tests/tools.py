@@ -1,11 +1,24 @@
 from shutil import rmtree
 from tempfile import mkdtemp
-from StringIO import StringIO
+try:
+    from io import BytesIO
+except ImportError:
+    from StringIO import StringIO as BytesIO
 
 from django.conf.urls.defaults import url
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.base import BaseHandler
 from django.test import Client
+
+
+import sys
+if sys.version < '3':
+    def b(x):
+        return x
+else:
+    import codecs
+    def b(x):
+        return codecs.latin_1_encode(x)[0]
 
 
 class CacheMock(object):
@@ -69,14 +82,14 @@ class RequestFactory(Client):
 
         return request
 
-    def file(self, name, content=''):
+    def file(self, name, content=b('')):
         return ContentFile(content, name=name)
 
 
-class ContentFile(StringIO):
-    def __init__(self, *args, **kwargs):
-        self.name = kwargs.pop('name')
-        StringIO.__init__(self, *args, **kwargs)
+class ContentFile(BytesIO):
+    def __init__(self, content, name=None):
+        BytesIO.__init__(self, content)
+        self.name = 'name'
 
 
 

@@ -1,10 +1,12 @@
 # coding: utf-8
 from __future__ import absolute_import
 
-import string
 import random
 import time
-from cStringIO import StringIO
+try:
+    from io import BytesIO
+except:
+    from cStringIO import StringIO as BytesIO
 from django.core.cache import get_cache
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
@@ -44,7 +46,7 @@ class CacheTemporaryStorage(object):
         state = self.cache.get(self._getid(key))
         if state:
             size = state[FIELD_FILE_SIZE]
-            file = StringIO()
+            file = BytesIO()
             file.write(state[FIELD_CONTENT])
             upload = InMemoryUploadedFile(
                     file=file,
@@ -60,7 +62,7 @@ class CacheTemporaryStorage(object):
         self.cache.delete(self._getid(key))
 
     def _generate_key(self):
-        return string.replace(str(random.random() * time.time()), '.', '')
+        return str(random.random() * time.time()).replace('.', '')
 
     def _getid(self, key):
         return self.prefix + key

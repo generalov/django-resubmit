@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import os
 from django.conf.urls.defaults import patterns
 from django.test import TestCase
+from .tools import b
 from .tools import MediaStub
 
 
@@ -23,18 +24,18 @@ class MediaStubTest(TestCase):
 
         uploaded_path = os.path.join(settings.MEDIA_ROOT, "upload.txt")
         f = open(uploaded_path, 'wb')
-        f.write("some data")
+        f.write(b("some data"))
         f.close()
         response = self.client.get(settings.MEDIA_URL + "upload.txt")
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content, "some data")
+        self.assertEquals(response.content, b("some data"))
 
     def test_should_get_file_using_media_url(self):
         from django.core.files.storage import default_storage
         from django.core.files.base import ContentFile
 
-        default_storage.save("upload.txt", ContentFile("some data"))
+        default_storage.save("upload.txt", ContentFile(b("some data")))
         response = self.client.get("/media/upload.txt")
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.content, "some data")
+        self.assertEquals(response.content, b("some data"))
 

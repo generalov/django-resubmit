@@ -152,3 +152,12 @@ Bugs and TODO
 * Write documentation.
 * Commit into the Django.
 
+.. from http://ubuntuforums.org/showthread.php?t=1751455
+In order to fix installation of the `PIL` with ZLIB (PNG/ZIP) support into the `tox`
+environments in `Ubuntu` run the following commands::
+
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libfreetype.so /usr/lib/
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libz.a /usr/lib/
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libjpeg.so /usr/lib/
+

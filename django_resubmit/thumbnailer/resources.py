@@ -35,7 +35,7 @@ class StorageResource(IResource):
     def __init__(self, path, storage):
         storage = storage
         self.__key = path
-        self.__data = storage.get_file(self.__key, u'dummy-field-name')
+        self.__data = storage.get_file(self.__key, 'dummy-field-name')
 
     @property
     def path(self):

@@ -8,6 +8,7 @@ from django import template
 from django.http import HttpResponse
 from django_webtest import WebTest
 from django.conf.urls.defaults import patterns, url, include
+from .tools import b
 from .tools import MediaStub
 
 from ..widgets import FileWidget
@@ -31,7 +32,7 @@ class FormTest(WebTest):
     def test_should_preserve_file_on_form_errors(self):
         response = self.app.get('/')
         form = response.forms[0]
-        form['file'] = ['test.txt', u'test content']
+        form['file'] = ['test.txt', b('test content')]
 
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
@@ -39,20 +40,20 @@ class FormTest(WebTest):
         self.assertEquals(len(response.context['form']['name'].errors), 1)
         form = response.forms[0]
 
-        form['name'] = u'value for required field'
+        form['name'] = 'value for required field'
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseCreated.status_code, response.body)
-        self.assertEquals(response.unicode_body, u'test content')
+        self.assertEquals(response.body, b('test content'))
 
     def test_should_show_cached_file_without_link(self):
         response = self.app.get('/')
         form = response.forms[0]
-        form['file'] = ['test.txt', u'test content']
+        form['file'] = ['test.txt', b('test content')]
         response = form.submit()
         self.assertEquals(response.status_int, HttpResponseValidationError.status_code)
 
         self.assertTrue('href' not in response.lxml.xpath("//a[contains(@class, 'resubmit-initial')]")[0],
-                u"Should show cached file without link")
+                "Should show cached file without link")
 
     def test_if_thumb_is_rendered_on_submit_errors(self):
         """ Check thumb generation for image files on submit errors"""
@@ -66,11 +67,11 @@ class FormTest(WebTest):
 
         preview_url = response.lxml.xpath("//img[contains(@class, 'resubmit-preview__image')]")[0].attrib.get('src')
         self.assertTrue(preview_url,
-                u"page contains an <img> tag with preview")
+                "page contains an <img> tag with preview")
 
         preview_response = self.app.get(preview_url)
         self.assertEquals(preview_response.status_int, HttpResponseOk.status_code,
-                u"preview available for download")
+                "preview available for download")
 
 
 
@@ -86,7 +87,7 @@ class HttpResponseCreated(HttpResponse):
     status_code = 201
 
 
-UPLOAD_TEMPLATE = u"""
+UPLOAD_TEMPLATE = """
 <html>
   <body>
     <form action="." method="post" enctype="multipart/form-data">

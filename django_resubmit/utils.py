@@ -10,10 +10,10 @@ def import_object(name):
     except AttributeError:
         raise ImportError("'%s' module has no attribute '%s'" % (module, attr))
 
-def import_configurable_object(name, verbose_name=u'object'):
+def import_configurable_object(name, verbose_name='object'):
     try:
         result = import_object(name)
-    except ImportError, e:
-        raise ImproperlyConfigured('Error importing %(object)s %(name)s: "%(exception)s"' % {
-            'object': verbose_name, 'name': name, 'exception': e})
+    except ImportError: 
+        raise ImproperlyConfigured('Error importing %(object)s %(name)s' % {
+            'object': verbose_name, 'name': name})
     return result

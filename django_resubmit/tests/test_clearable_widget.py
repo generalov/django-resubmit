@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import unittest
+from .tools import b
 from .tools import CacheMock
 from .tools import RequestFactory
 
@@ -20,7 +21,7 @@ class ClearableWidgetTest(unittest.TestCase):
         widget = self.widget
         widget.is_required = True
         request = self.factory.post('/', {
-            'file': self.factory.file('test.txt', 'test content')})
+            'file': self.factory.file('test.txt', b('test content'))})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
         self.assertTrue('resubmit-clear' not in output, output)
@@ -29,7 +30,7 @@ class ClearableWidgetTest(unittest.TestCase):
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
-            'file': self.factory.file('test.txt', 'test content')})
+            'file': self.factory.file('test.txt', b('test content'))})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
         self.assertTrue('resubmit-clear' in output, output)
@@ -42,7 +43,7 @@ class ClearableWidgetTest(unittest.TestCase):
         widget.is_required = False
         request = self.factory.post('/', {
             'file-clear': 'on',
-            'file': self.factory.file('test.txt', 'test content')})
+            'file': self.factory.file('test.txt', b('test content'))})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(upload, FILE_INPUT_CONTRADICTION)
         self.assertEquals(cache._data, {})
@@ -54,7 +55,7 @@ class ClearableWidgetTest(unittest.TestCase):
         widget = self.widget
         widget.is_required = False
         request = self.factory.post('/', {
-            'file': self.factory.file('test.txt', 'test content')})
+            'file': self.factory.file('test.txt', b('test content'))})
         widget.value_from_datadict(request.POST, request.FILES, 'file')
         self.assertEquals(len(cache._data.keys()), 1, "File should be hodled")
 
@@ -80,7 +81,7 @@ class ClearableWidgetTest(unittest.TestCase):
 
         widget = self.widget
         request = self.factory.post('/', {
-            'file': self.factory.file('test.txt', 'x' * 10000000)})
+            'file': self.factory.file('test.txt', b('x' * 10000000))})
         upload = widget.value_from_datadict(request.POST, request.FILES, 'file')
         output = widget.render('file', upload)
         self.assertEquals(len(cache._data.keys()), 1, "Should to remember large file")

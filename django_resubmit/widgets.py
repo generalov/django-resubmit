@@ -25,11 +25,11 @@ class FileWidget(ClearableFileInput):
         self.template = 'django_resubmit/widget.html'
         self.thumbnail_size = settings.RESUBMIT_THUMBNAIL_SIZE
         self.storage = get_temporary_storage()
-        self.resubmit_key = u''
+        self.resubmit_key = ''
         super(FileWidget, self).__init__(*args, **kwargs)
 
     def value_from_datadict(self, data, files, name):
-        self.resubmit_key = data.get(self._resubmit_keyname(name), u'')
+        self.resubmit_key = data.get(self._resubmit_keyname(name), '')
 
         upload = super(FileWidget, self).value_from_datadict(data, files, name)
 
@@ -37,7 +37,7 @@ class FileWidget(ClearableFileInput):
         if upload is FILE_INPUT_CLEAR or upload is FILE_INPUT_CONTRADICTION:
             if self.resubmit_key:
                 self.storage.clear_file(self.resubmit_key)
-                self.resubmit_key = u''
+                self.resubmit_key = ''
             return upload
 
         if files and name in files:
@@ -51,7 +51,7 @@ class FileWidget(ClearableFileInput):
                 upload = restored
                 files[name] = upload
             else:
-                self.resubmit_key = u''
+                self.resubmit_key = ''
 
         return upload
 
@@ -87,7 +87,7 @@ class FileWidget(ClearableFileInput):
                 'clear_checkbox_name': checkbox_name,
                 'clear_checkbox_label': self.clear_checkbox_label,
                 ## Resubmit
-                'resubmit_key_input': HiddenInput().render(self._resubmit_keyname(name), self.resubmit_key or u'', {}),
+                'resubmit_key_input': HiddenInput().render(self._resubmit_keyname(name), self.resubmit_key or '', {}),
                 ## Preview
                 'thumbnail_url': thumbnail_url,
                 'preview_width': width,
