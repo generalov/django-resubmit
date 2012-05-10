@@ -130,7 +130,11 @@ in Chrome, Firefox and IE.
 How To Run Tests
 ================
 
-Use virtualenv::
+Use tox to run unit tests with different `python` versions::
+
+    tox
+
+Use virtualenv to run example application::
 
     virtualenv python
     . ./python/bin/activate

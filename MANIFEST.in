@@ -1,2 +1,4 @@
+include AUTHORS LICENSE README.rst
+include requirements.txt
 recursive-include django_resubmit/templates *
 recursive-include django_resubmit/static *

@@ -6,7 +6,9 @@ RESUBMIT_THUMBNAILERS = [
         'NAME': 'django_resubmit.thumbnailer.pil_image.Thumbnailer',
         'MIME_TYPES': (
             'image/bmp', 'image/x-ms-bmp',
-            'image/png', 'image/jpeg', 'image/gif',
+            'image/gif',
+            'image/jpeg',
+            'image/png',
             'image/x-icon', 'image/vnd.microsoft.icon',)
     }
 ]
