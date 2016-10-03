@@ -1,7 +1,7 @@
 .. thumbnail: http://live.gnome.org/ThumbnailerSpec
 
 This could help users to resubmit form after validation error was occured
-without loosing selected files.
+without losing selected files.
 
 
 Status and License
